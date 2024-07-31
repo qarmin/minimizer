@@ -1,13 +1,12 @@
 #![feature(isqrt)]
 
-use std::path::Path;
-use std::{fs, process};
-use std::cmp::min;
-use std::os::unix::prelude::ExitStatusExt;
-use std::process::Output;
 use clap::Parser;
 use rand::prelude::ThreadRng;
 use rand::Rng;
+use std::os::unix::prelude::ExitStatusExt;
+use std::path::Path;
+use std::process::Output;
+use std::{fs, process};
 use strum_macros::Display;
 
 #[derive(Parser)]
@@ -15,19 +14,36 @@ use strum_macros::Display;
 #[command(author = "Rafał Mikrut")]
 #[command(version = "1.0.0")]
 #[command(
-    about = "Minimize files", long_about = "App that minimizes files, to find smallest possible file that have."
+    about = "Minimize files",
+    long_about = "App that minimizes files, to find smallest possible file that have."
 )]
 pub struct Settings {
-    #[arg(short, long, value_name = "INPUT", help = "Input file that will be minimized")]
+    #[arg(
+        short,
+        long,
+        value_name = "INPUT",
+        help = "Input file that will be minimized"
+    )]
     pub(crate) input_file: String,
 
-    #[arg(short, long, value_name = "OUTPUT", help = "Output file to save results")]
+    #[arg(
+        short,
+        long,
+        value_name = "OUTPUT",
+        help = "Output file to save results"
+    )]
     pub(crate) output_file: String,
 
     #[arg(short, long, value_name = "NUMBER", help = "Attempts to minimize file")]
     pub(crate) attempts: u32,
 
-    #[arg(short, long, value_name = "NUMBER", help = "Reset attempts counter to start value, when file was minimized in current iteration", default_value_t = 100)]
+    #[arg(
+        short,
+        long,
+        value_name = "NUMBER",
+        help = "Reset attempts counter to start value, when file was minimized in current iteration",
+        default_value_t = 100
+    )]
     pub(crate) reset_attempts: u32,
 
     #[arg(
@@ -48,16 +64,31 @@ pub struct Settings {
     )]
     pub(crate) ascii_mode: bool,
 
-    #[arg(short, long, value_name = "COMMAND", help = "Command which will be used to minimize e.g. 'godot {} -c 1000'\nBy default {} is used as placeholder for file, but this can be changed.\nAll occurences of \" will be replaced with '")]
+    #[arg(
+        short,
+        long,
+        value_name = "COMMAND",
+        help = "Command which will be used to minimize e.g. 'godot {} -c 1000'\nBy default {} is used as placeholder for file, but this can be changed.\nAll occurences of \" will be replaced with '"
+    )]
     pub(crate) command: String,
 
-    #[arg(short, long, value_name = "BROKEN_CONTENT", help = "Content inside output of command, that will show that file is broken", default_value = "{}")]
+    #[arg(
+        short,
+        long,
+        value_name = "BROKEN_CONTENT",
+        help = "Content inside output of command, that will show that file is broken",
+        default_value = "{}"
+    )]
     pub(crate) broken_info: String,
 }
 
 trait DataTraits<T> {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error>;
-    fn get_mut_vec<T>(&mut self) -> &mut Vec<T>;
+    fn get_mut_vec(&mut self) -> &mut Vec<T>;
+    fn get_vec(&self) -> &Vec<T>;
+    fn len(&self) -> usize {
+        self.get_vec().len()
+    }
 }
 pub struct MinimizationBytes {
     pub(crate) bytes: Vec<u8>,
@@ -66,8 +97,11 @@ impl DataTraits<u8> for MinimizationBytes {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error> {
         fs::write(file_name, &self.bytes)
     }
-    fn get_mut_vec<T>(&mut self) -> &mut Vec<T> {
+    fn get_mut_vec(&mut self) -> &mut Vec<u8> {
         &mut self.bytes
+    }
+    fn get_vec(&self) -> &Vec<u8> {
+        &self.bytes
     }
 }
 pub struct MinimizationLines {
@@ -77,8 +111,11 @@ impl DataTraits<String> for MinimizationLines {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error> {
         fs::write(file_name, self.lines.join("\n"))
     }
-    fn get_mut_vec<T>(&mut self) -> &mut Vec<T> {
+    fn get_mut_vec(&mut self) -> &mut Vec<String> {
         &mut self.lines
+    }
+    fn get_vec(&self) -> &Vec<String> {
+        &self.lines
     }
 }
 pub struct MinimizationChars {
@@ -88,8 +125,11 @@ impl DataTraits<char> for MinimizationChars {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error> {
         fs::write(file_name, &self.chars.iter().collect::<String>())
     }
-    fn get_mut_vec<T>(&mut self) -> &mut Vec<T> {
+    fn get_mut_vec(&mut self) -> &mut Vec<char> {
         &mut self.chars
+    }
+    fn get_vec(&self) -> &Vec<char> {
+        &self.chars
     }
 }
 
@@ -109,11 +149,15 @@ fn main() {
 
     println!("Example command: {}", create_command(&settings, "test.jpg"));
 
-    let mut initial_file_content = load_content(&settings);
+    let initial_file_content = load_content(&settings);
 
     println!("Initial file size: {}", initial_file_content.len());
 
-    let (is_initially_broken, initial_output) = check_if_is_broken(&initial_file_content, &settings);
+    let mut minimization_bytes = MinimizationBytes {
+        bytes: initial_file_content.clone(),
+    };
+
+    let (is_initially_broken, initial_output) = check_if_is_broken(&minimization_bytes, &settings);
     if !is_initially_broken {
         eprintln!("File is not broken, check command or file");
         eprintln!("==================OUTPUT==================");
@@ -122,14 +166,29 @@ fn main() {
         process::exit(1);
     }
 
-    let minimization_bytes = MinimizationBytes { bytes: initial_file_content.clone() };
-
     let mut thread_rng = rand::thread_rng();
     let mut iterations_counter = 0;
 
-    extend_results(remove_some_content_from_start(&mut initial_file_content, &mut thread_rng, &settings), &mut iterations_counter, Mode::Bytes);
-    extend_results(remove_some_content_from_end(&mut initial_file_content, &mut thread_rng, &settings), &mut iterations_counter, Mode::Bytes);
-
+    extend_results(
+        remove_some_content_from_start_end(
+            &mut minimization_bytes,
+            &mut thread_rng,
+            &settings,
+            true,
+        ),
+        &mut iterations_counter,
+        Mode::Bytes,
+    );
+    extend_results(
+        remove_some_content_from_start_end(
+            &mut minimization_bytes,
+            &mut thread_rng,
+            &settings,
+            false,
+        ),
+        &mut iterations_counter,
+        Mode::Bytes,
+    );
 }
 
 fn extend_results(result: (bool, u32, usize, usize), iterations_counter: &mut u32, mode: Mode) {
@@ -140,69 +199,70 @@ fn extend_results(result: (bool, u32, usize, usize), iterations_counter: &mut u3
     }
 }
 
-
-fn remove_some_content_from_end<T>(content: &mut Vec<T>, thread_rng: &mut ThreadRng, settings: &Settings) -> (bool, u32, usize, usize) {
+fn remove_some_content_from_start_end<T>(
+    content: &mut dyn DataTraits<T>,
+    thread_rng: &mut ThreadRng,
+    settings: &Settings,
+    from_start: bool,
+) -> (bool, u32, usize, usize)
+where
+    T: Clone,
+{
     assert_ne!(content.len(), 0);
-    let old_len = content.len();
+    let initial_content = content.get_vec().clone();
+    let old_len = initial_content.len();
 
-    let mut chosen_indexes = prepare_indexes_to_remove(content, thread_rng);;
+    let chosen_indexes = prepare_indexes_to_remove(content.get_vec(), thread_rng);
 
     let mut iterations = 0;
     for idx in chosen_indexes {
         iterations += 1;
-        let test_content = &content[idx..];
-        let (is_broken, _output) = check_if_is_broken(test_content, &settings);
+        if from_start {
+            *content.get_mut_vec() = content.get_vec()[idx..].to_vec();
+        } else {
+            *content.get_mut_vec() = content.get_vec()[..idx].to_vec();
+        }
+        let (is_broken, _output) = check_if_is_broken(content, &settings);
         if is_broken {
-            *content = test_content.to_vec();
             return (true, iterations, old_len, content.len());
         }
     }
 
+    // Not broken, restore initial content
+    *content.get_mut_vec() = initial_content;
+
     (false, iterations, old_len, content.len())
 }
 
-fn prepare_indexes_to_remove(content: &Vec<u8>, thread_rng: &mut ThreadRng) -> Vec<usize> {
+fn prepare_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut ThreadRng) -> Vec<usize> {
     let indexes_to_remove = content.len().isqrt();
-    let mut chosen_indexes: Vec<_> = (0..indexes_to_remove).map(|_| thread_rng.gen_range(0..content.len())).collect();
+    let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
+        .map(|_| thread_rng.gen_range(0..content.len()))
+        .collect();
     chosen_indexes.sort_unstable();
     chosen_indexes.dedup();
     chosen_indexes
 }
 
-fn remove_some_content_from_start<T>(content: &mut Vec<T>, thread_rng: &mut ThreadRng, settings: &Settings) -> (bool, u32, usize, usize) {
-    assert_ne!(content.len(), 0);
-    let old_len = content.len();
-
-    let mut chosen_indexes = prepare_indexes_to_remove(content, thread_rng);
-
-    let mut iterations = 0;
-    for idx in chosen_indexes {
-        iterations += 1;
-        let test_content = &content[..idx];
-        let (is_broken, _output) = check_if_is_broken(test_content, &settings);
-        if is_broken {
-            *content = test_content.to_vec();
-            return (true, iterations, old_len, content.len());
-        }
-    }
-
-    (false, iterations, old_len, content.len())
-}
-
-
-
-
 fn create_command(settings: &Settings, file_name: &str) -> String {
-    settings.command.replace("{}", &format!("\"{}\"", file_name))
+    settings
+        .command
+        .replace("{}", &format!("\"{}\"", file_name))
 }
 
-fn check_if_is_broken(content: &[u8], settings: &Settings) -> (bool, String) {
-    if let Err(e) = fs::write(&settings.output_file, &content) {
+fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String) {
+    if let Err(e) = content.save_to_file(&settings.output_file) {
         eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
         process::exit(1);
     }
     let command = create_command(&settings, &settings.output_file);
-    let output = process::Command::new("sh").arg("-c").arg(&command).spawn().unwrap().wait_with_output().unwrap();
+    let output = process::Command::new("sh")
+        .arg("-c")
+        .arg(&command)
+        .spawn()
+        .unwrap()
+        .wait_with_output()
+        .unwrap();
     let all = collect_output(&output);
     (all.contains(&settings.broken_info), all)
 }
@@ -212,11 +272,13 @@ pub fn collect_output(output: &Output) -> String {
     let stderr = &output.stderr;
     let stdout_str = String::from_utf8_lossy(stdout);
     let stderr_str = String::from_utf8_lossy(stderr);
-    let status_signal = format!("====== Status {:?}, Signal {:?}", output.status.code(), output.status.signal());
+    let status_signal = format!(
+        "====== Status {:?}, Signal {:?}",
+        output.status.code(),
+        output.status.signal()
+    );
     format!("{stdout_str}\n{stderr_str}\n\n{status_signal}")
 }
-
-
 
 fn load_content(settings: &Settings) -> Vec<u8> {
     if Path::new(&settings.input_file).exists() {
@@ -234,7 +296,8 @@ fn load_content(settings: &Settings) -> Vec<u8> {
     match (settings.character_mode, settings.ascii_mode) {
         (false, true) => {
             // Second condition is probably not needed
-            if !content.iter().all(|&c| c.is_ascii()) || String::from_utf8(content.clone()).is_err() {
+            if !content.iter().all(|&c| c.is_ascii()) || String::from_utf8(content.clone()).is_err()
+            {
                 eprintln!("File {} is not ascii file", &settings.input_file);
                 process::exit(1);
             }
@@ -253,7 +316,10 @@ fn load_content(settings: &Settings) -> Vec<u8> {
         process::exit(1);
     }
     if let Err(e) = fs::remove_file(&settings.output_file) {
-        eprintln!("Error removing file {}, reason {}", &settings.output_file, e);
+        eprintln!(
+            "Error removing file {}, reason {}",
+            &settings.output_file, e
+        );
         process::exit(1);
     }
 
