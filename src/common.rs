@@ -89,3 +89,26 @@ pub fn prepare_indexes_to_remove<T>(
     }
     chosen_indexes
 }
+
+pub fn prepare_random_indexes_to_remove<T>(
+    content: &Vec<T>,
+    thread_rng: &mut ThreadRng,
+    max_iterations: usize,
+) -> Vec<Vec<usize>> {
+    let iters = max(min(max_iterations, content.len().isqrt()), 1);
+    let mut chosen_indexes = vec![];
+
+    for _ in 0..iters {
+        let mut current_indexes = vec![];
+        for _ in 0..=thread_rng.gen_range(1..=iters) {
+            current_indexes.push(thread_rng.gen_range(0..content.len()));
+        }
+        current_indexes.sort_unstable();
+        current_indexes.dedup();
+        chosen_indexes.push(current_indexes);
+    }
+
+    chosen_indexes.sort_unstable();
+    chosen_indexes.dedup();
+    chosen_indexes
+}

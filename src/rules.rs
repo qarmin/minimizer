@@ -1,38 +1,45 @@
-use crate::common::{check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove};
+use crate::common::{
+    check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove, prepare_random_indexes_to_remove,
+};
 use crate::data_trait::DataTraits;
 use crate::settings::Settings;
 use rand::prelude::ThreadRng;
 use std::path::Path;
 use std::{fs, process};
 
-// pub fn remove_random_content_from_middle<T>(
-//     content: &mut dyn DataTraits<T>,
-//     thread_rng: &mut ThreadRng,
-//     settings: &Settings,
-// ) -> (bool, u32, usize, usize)
-// where
-//     T: Clone,
-// {
-//     assert!(content.len() >= 2);
-//     let initial_content = content.get_vec().clone();
-//     let old_len = initial_content.len();
-//
-//     let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng);
-//
-//     let mut iterations = 0;
-//     for (start_idx, end_idx) in chosen_indexes {
-//         iterations += 1;
-//         *content.get_mut_vec() = content.get_vec()[..start_idx].to_vec();
-//         content.get_mut_vec().extend_from_slice(&content.get_vec()[end_idx..]);
-//         let (is_broken, _output) = check_if_is_broken(content, &settings);
-//         if is_broken {
-//             return (true, iterations, old_len, content.len());
-//         }
-//         *content.get_mut_vec() = initial_content.clone();
-//     }
-//     (false, iterations, old_len, content.len())
-//
-//     }
+pub fn remove_random_content_from_middle<T>(
+    content: &mut dyn DataTraits<T>,
+    thread_rng: &mut ThreadRng,
+    settings: &Settings,
+    max_iterations: usize,
+) -> (bool, u32, usize)
+where
+    T: Clone,
+{
+    assert!(content.len() >= 2);
+    let initial_content = content.get_vec().clone();
+
+    let chosen_indexes = prepare_random_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
+
+    let mut iterations_used = 0;
+    for indexes_to_remove in chosen_indexes {
+        iterations_used += 1;
+        *content.get_mut_vec() = content
+            .get_vec()
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| !indexes_to_remove.contains(idx))
+            .map(|(_, v)| v)
+            .cloned()
+            .collect();
+        let (is_broken, _output) = check_if_is_broken(content, &settings);
+        if is_broken {
+            return (true, iterations_used, content.len());
+        }
+        *content.get_mut_vec() = initial_content.clone();
+    }
+    (false, iterations_used, content.len())
+}
 
 pub fn remove_continuous_content_from_middle<T>(
     content: &mut dyn DataTraits<T>,

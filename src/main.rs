@@ -7,7 +7,10 @@ use rand::prelude::ThreadRng;
 
 use crate::common::{check_if_is_broken, create_command};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
-use crate::rules::{load_content, remove_continuous_content_from_middle, remove_some_content_from_start_end};
+use crate::rules::{
+    load_content, remove_continuous_content_from_middle, remove_random_content_from_middle,
+    remove_some_content_from_start_end,
+};
 use crate::settings::Settings;
 
 mod common;
@@ -81,8 +84,8 @@ fn main() {
     match mb.save_to_file(&settings.output_file) {
         Ok(_) => {
             println!(
-                "File {} was minimized to {} bytes, after {} iterations",
-                &settings.output_file, bytes, iters
+                "File {} was minimized to {} bytes, after {} iterations (limit was {}, retrying - {})",
+                &settings.output_file, bytes, iters, settings.attempts, settings.reset_attempts
             );
         }
         Err(e) => {
@@ -114,10 +117,10 @@ fn minimize_general<T>(
         extend_results(changed, iterations, old_len, new_len, iters, mode);
     }
 
-    loop {
+    'start: loop {
         for from_start in [false, true] {
             if mm.len() < 2 || *iters >= max_attempts {
-                break;
+                break 'start;
             }
             let old_len = mm.len();
             let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, 3, from_start);
@@ -125,10 +128,17 @@ fn minimize_general<T>(
         }
 
         if mm.len() < 2 || *iters >= max_attempts {
-            break;
+            break 'start;
         }
         let old_len = mm.len();
         let (changed, iterations, new_len) = remove_continuous_content_from_middle(mm, rng, settings, 20);
+        extend_results(changed, iterations, old_len, new_len, iters, mode);
+
+        if mm.len() < 2 || *iters >= max_attempts {
+            break 'start;
+        }
+        let old_len = mm.len();
+        let (changed, iterations, new_len) = remove_random_content_from_middle(mm, rng, settings, 20);
         extend_results(changed, iterations, old_len, new_len, iters, mode);
     }
 }
