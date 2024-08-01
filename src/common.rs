@@ -2,7 +2,7 @@ use crate::data_trait::DataTraits;
 use crate::settings::Settings;
 use rand::prelude::ThreadRng;
 use rand::Rng;
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::os::unix::prelude::ExitStatusExt;
 use std::process;
 use std::process::{Output, Stdio};
@@ -49,7 +49,7 @@ pub fn collect_output(output: &Output) -> String {
 // Indexes are sorted by difference between them - at start we are checking if we can remove big chunk which should be more effective
 pub fn prepare_double_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut ThreadRng) -> Vec<(usize, usize)> {
     // Max 10 indexes to remove - no need to test more
-    let indexes_to_remove = min(10, content.len().isqrt());
+    let indexes_to_remove = max(min(10, content.len().isqrt()), 1);
     let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
         .map(|_| {
             (
@@ -70,7 +70,8 @@ pub fn prepare_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut ThreadRng
     let start_idx = if from_start { 1 } else { 0 };
     let end_idx = if from_start { content.len() } else { content.len() - 1 };
     // Max 10 indexes to remove - no need to test more
-    let indexes_to_remove = min(10, content.len().isqrt());
+    let indexes_to_remove = max(min(10, content.len().isqrt()), 1);
+
     let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
         .map(|_| thread_rng.gen_range(start_idx..end_idx))
         .collect();

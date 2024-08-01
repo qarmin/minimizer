@@ -1,15 +1,12 @@
 #![feature(isqrt)]
 
-use std::os::unix::prelude::ExitStatusExt;
-use std::path::Path;
-use std::{fs, process};
+use std::process;
 
 use clap::Parser;
 use rand::prelude::ThreadRng;
-use rand::Rng;
 
-use crate::common::{check_if_is_broken, create_command, prepare_double_indexes_to_remove, prepare_indexes_to_remove};
-use crate::data_trait::{DataTraits, MinimizationBytes, Mode};
+use crate::common::{check_if_is_broken, create_command};
+use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::rules::{load_content, remove_continuous_content_from_middle, remove_some_content_from_start_end};
 use crate::settings::Settings;
 
@@ -28,10 +25,9 @@ fn main() {
 
     println!("Initial file size: {}", initial_file_content.len());
 
-    let mut mb = MinimizationBytes {
+    let mb = MinimizationBytes {
         bytes: initial_file_content.clone(),
     };
-
     let (is_initially_broken, initial_output) = check_if_is_broken(&mb, &settings);
     if !is_initially_broken {
         eprintln!("File is not broken, check command or file");
@@ -44,41 +40,49 @@ fn main() {
     let mut rng = rand::thread_rng();
     let mut iters = 0;
 
-    while iters < settings.attempts {
-        if mb.len() >= 2 {
-            extend_results(
-                remove_continuous_content_from_middle(&mut mb, &mut rng, &settings),
-                &mut iters,
-                Mode::Bytes,
-            );
-        }
+    let mut mb;
+    if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
+        let mut ms = MinimizationLines {
+            lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
+        };
+        minimize_general(
+            &mut iters,
+            &settings,
+            settings.attempts / 3,
+            &mut ms,
+            Mode::Lines,
+            &mut rng,
+        );
 
-        if mb.len() == 0 {
-            break;
-        }
-        extend_results(
-            remove_some_content_from_start_end(&mut mb, &mut rng, &settings, true),
+        let mut mc = MinimizationChars {
+            chars: ms.lines.join("\n").chars().collect(),
+        };
+        minimize_general(
             &mut iters,
-            Mode::Bytes,
+            &settings,
+            settings.attempts * 2 / 3,
+            &mut mc,
+            Mode::Chars,
+            &mut rng,
         );
-        if mb.len() == 0 {
-            break;
-        }
-        extend_results(
-            remove_some_content_from_start_end(&mut mb, &mut rng, &settings, false),
-            &mut iters,
-            Mode::Bytes,
-        );
-        if mb.len() == 0 {
-            break;
-        }
+
+        mb = MinimizationBytes {
+            bytes: mc.chars.iter().collect::<String>().as_bytes().to_vec(),
+        };
+    } else {
+        mb = MinimizationBytes {
+            bytes: initial_file_content.clone(),
+        };
     }
 
+    minimize_general(&mut iters, &settings, settings.attempts, &mut mb, Mode::Bytes, &mut rng);
+
+    let bytes = mb.len();
     match mb.save_to_file(&settings.output_file) {
         Ok(_) => {
             println!(
-                "File was minimized to {}, after {} iterations",
-                &settings.output_file, iters
+                "File {} was minimized to {} bytes, after {} iterations",
+                &settings.output_file, bytes, iters
             );
         }
         Err(e) => {
@@ -88,11 +92,51 @@ fn main() {
     }
 }
 
-fn extend_results(result: (bool, u32, usize, usize), iterations_counter: &mut u32, mode: Mode) {
-    let (changed, iterations, old_len, new_len) = result;
+fn minimize_general<T>(
+    iters: &mut u32,
+    settings: &Settings,
+    max_attempts: u32,
+    mm: &mut dyn DataTraits<T>,
+    mode: Mode,
+    rng: &mut ThreadRng,
+) where
+    T: Clone,
+{
+    println!("Using {mode} mode");
+    loop {
+        if mm.len() < 2 || *iters >= max_attempts {
+            break;
+        }
+        let old_len = mm.len();
+        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, false);
+        extend_results(changed, iterations, old_len, new_len, iters, mode);
+
+        if mm.len() < 2 || *iters >= max_attempts {
+            break;
+        }
+        let old_len = mm.len();
+        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, true);
+        extend_results(changed, iterations, old_len, new_len, iters, mode);
+
+        if mm.len() < 2 || *iters >= max_attempts {
+            break;
+        }
+        let old_len = mm.len();
+        let (changed, iterations, new_len) = remove_continuous_content_from_middle(mm, rng, settings);
+        extend_results(changed, iterations, old_len, new_len, iters, mode);
+    }
+}
+
+fn extend_results(
+    changed: bool,
+    iterations: u32,
+    old_len: usize,
+    new_len: usize,
+    iterations_counter: &mut u32,
+    mode: Mode,
+) {
     *iterations_counter += iterations;
     if changed {
         println!("File was changed from {} to {} {}", old_len, new_len, mode);
     }
 }
-
