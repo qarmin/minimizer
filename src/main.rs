@@ -103,26 +103,32 @@ fn minimize_general<T>(
     T: Clone,
 {
     println!("Using {mode} mode");
+
+    // At start, we can try to remove big chunks from start/end - inside loop later, this is probably not effective
+    for from_start in [false, true] {
+        if mm.len() < 2 || *iters >= max_attempts {
+            return;
+        }
+        let old_len = mm.len();
+        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, 20, from_start);
+        extend_results(changed, iterations, old_len, new_len, iters, mode);
+    }
+
     loop {
-        if mm.len() < 2 || *iters >= max_attempts {
-            break;
+        for from_start in [false, true] {
+            if mm.len() < 2 || *iters >= max_attempts {
+                break;
+            }
+            let old_len = mm.len();
+            let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, 3, from_start);
+            extend_results(changed, iterations, old_len, new_len, iters, mode);
         }
-        let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, false);
-        extend_results(changed, iterations, old_len, new_len, iters, mode);
 
         if mm.len() < 2 || *iters >= max_attempts {
             break;
         }
         let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, true);
-        extend_results(changed, iterations, old_len, new_len, iters, mode);
-
-        if mm.len() < 2 || *iters >= max_attempts {
-            break;
-        }
-        let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_continuous_content_from_middle(mm, rng, settings);
+        let (changed, iterations, new_len) = remove_continuous_content_from_middle(mm, rng, settings, 20);
         extend_results(changed, iterations, old_len, new_len, iters, mode);
     }
 }

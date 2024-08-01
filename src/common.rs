@@ -47,9 +47,12 @@ pub fn collect_output(output: &Output) -> String {
 // Indexes are sorted and second value is always greater than first
 // Indexes are unique
 // Indexes are sorted by difference between them - at start we are checking if we can remove big chunk which should be more effective
-pub fn prepare_double_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut ThreadRng) -> Vec<(usize, usize)> {
-    // Max 10 indexes to remove - no need to test more
-    let indexes_to_remove = max(min(10, content.len().isqrt()), 1);
+pub fn prepare_double_indexes_to_remove<T>(
+    content: &Vec<T>,
+    thread_rng: &mut ThreadRng,
+    max_iterations: usize,
+) -> Vec<(usize, usize)> {
+    let indexes_to_remove = max(min(max_iterations, content.len().isqrt()), 1);
     let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
         .map(|_| {
             (
@@ -66,11 +69,15 @@ pub fn prepare_double_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut Th
     chosen_indexes
 }
 
-pub fn prepare_indexes_to_remove<T>(content: &Vec<T>, thread_rng: &mut ThreadRng, from_start: bool) -> Vec<usize> {
+pub fn prepare_indexes_to_remove<T>(
+    content: &Vec<T>,
+    thread_rng: &mut ThreadRng,
+    max_iterations: usize,
+    from_start: bool,
+) -> Vec<usize> {
     let start_idx = if from_start { 1 } else { 0 };
     let end_idx = if from_start { content.len() } else { content.len() - 1 };
-    // Max 10 indexes to remove - no need to test more
-    let indexes_to_remove = max(min(10, content.len().isqrt()), 1);
+    let indexes_to_remove = max(min(max_iterations, content.len().isqrt()), 1);
 
     let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
         .map(|_| thread_rng.gen_range(start_idx..end_idx))

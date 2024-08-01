@@ -38,6 +38,7 @@ pub fn remove_continuous_content_from_middle<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
+    max_iterations: usize,
 ) -> (bool, u32, usize)
 where
     T: Clone,
@@ -45,7 +46,7 @@ where
     assert!(content.len() >= 2);
     let initial_content = content.get_vec().clone();
 
-    let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng);
+    let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
 
     let mut iterations_used = 0;
     for (start_idx, end_idx) in chosen_indexes {
@@ -64,6 +65,7 @@ pub fn remove_some_content_from_start_end<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
+    max_iterations: usize,
     from_start: bool,
 ) -> (bool, u32, usize)
 where
@@ -71,7 +73,7 @@ where
 {
     assert!(content.len() >= 2);
     let initial_content = content.get_vec().clone();
-    let chosen_indexes = prepare_indexes_to_remove(content.get_vec(), thread_rng, from_start);
+    let chosen_indexes = prepare_indexes_to_remove(content.get_vec(), thread_rng, max_iterations, from_start);
 
     let mut iterations_used = 0;
     for idx in chosen_indexes {
