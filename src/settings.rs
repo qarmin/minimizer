@@ -9,20 +9,10 @@ use clap::Parser;
     long_about = "App that minimizes files, to find smallest possible file that have."
 )]
 pub struct Settings {
-    #[arg(
-        short,
-        long,
-        value_name = "INPUT",
-        help = "Input file that will be minimized"
-    )]
+    #[arg(short, long, value_name = "INPUT", help = "Input file that will be minimized")]
     pub(crate) input_file: String,
 
-    #[arg(
-        short,
-        long,
-        value_name = "OUTPUT",
-        help = "Output file to save results"
-    )]
+    #[arg(short, long, value_name = "OUTPUT", help = "Output file to save results")]
     pub(crate) output_file: String,
 
     #[arg(short, long, value_name = "NUMBER", help = "Attempts to minimize file")]
@@ -36,15 +26,6 @@ pub struct Settings {
         default_value_t = 100
     )]
     pub(crate) reset_attempts: u32,
-
-    #[arg(
-        short = 'u',
-        long,
-        value_name = "IS_CHARACTER_MODE",
-        help = "Operates on characters instead of bytes, will fail if file is not text file",
-        default_value_t = false
-    )]
-    pub(crate) character_mode: bool,
 
     #[arg(
         short,
