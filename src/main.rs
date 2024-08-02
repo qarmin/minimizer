@@ -8,7 +8,7 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::rules::{
-    load_content, remove_continuous_content_from_middle, remove_random_content_from_middle,
+    load_content, remove_certain_idx, remove_continuous_content_from_middle, remove_random_content_from_middle,
     remove_some_content_from_start_end,
 };
 use crate::settings::Settings;
@@ -17,6 +17,26 @@ mod common;
 mod data_trait;
 mod rules;
 mod settings;
+
+pub struct Stats {
+    pub(crate) all_iterations: u32,
+    pub(crate) current_iteration_count: u32,
+}
+impl Stats {
+    pub fn new() -> Self {
+        Stats {
+            all_iterations: 0,
+            current_iteration_count: 0,
+        }
+    }
+    pub fn increase(&mut self, how_much: u32) {
+        self.all_iterations += how_much;
+        self.current_iteration_count += how_much;
+    }
+    pub fn reset(&mut self) {
+        self.current_iteration_count = 0;
+    }
+}
 
 fn main() {
     let mut settings = Settings::parse();
@@ -41,7 +61,10 @@ fn main() {
     }
 
     let mut rng = rand::thread_rng();
-    let mut iters = 0;
+    let mut stats = Stats {
+        all_iterations: 0,
+        current_iteration_count: 0,
+    };
 
     let mut mb;
     if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
@@ -49,7 +72,7 @@ fn main() {
             lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
         };
         minimize_general(
-            &mut iters,
+            &mut stats,
             &settings,
             settings.attempts / 3,
             &mut ms,
@@ -61,7 +84,7 @@ fn main() {
             chars: ms.lines.join("\n").chars().collect(),
         };
         minimize_general(
-            &mut iters,
+            &mut stats,
             &settings,
             settings.attempts * 2 / 3,
             &mut mc,
@@ -78,14 +101,14 @@ fn main() {
         };
     }
 
-    minimize_general(&mut iters, &settings, settings.attempts, &mut mb, Mode::Bytes, &mut rng);
+    minimize_general(&mut stats, &settings, settings.attempts, &mut mb, Mode::Bytes, &mut rng);
 
     let bytes = mb.len();
     match mb.save_to_file(&settings.output_file) {
         Ok(_) => {
             println!(
                 "File {} was minimized to {} bytes, after {} iterations (limit was {}, retrying - {})",
-                &settings.output_file, bytes, iters, settings.attempts, settings.reset_attempts
+                &settings.output_file, bytes, stats.all_iterations, settings.attempts, settings.reset_attempts
             );
         }
         Err(e) => {
@@ -96,7 +119,7 @@ fn main() {
 }
 
 fn minimize_general<T>(
-    iters: &mut u32,
+    stats: &mut Stats,
     settings: &Settings,
     max_attempts: u32,
     mm: &mut dyn DataTraits<T>,
@@ -109,37 +132,46 @@ fn minimize_general<T>(
 
     // At start, we can try to remove big chunks from start/end - inside loop later, this is probably not effective
     for from_start in [false, true] {
-        if mm.len() < 2 || *iters >= max_attempts {
+        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
             return;
         }
         let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, 20, from_start);
-        extend_results(changed, iterations, old_len, new_len, iters, mode);
+        let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 20, from_start);
+        extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+    }
+
+    let available_stats = max_attempts - stats.current_iteration_count;
+    if available_stats > 500 && mm.len() < 200 || settings.reset_attempts && available_stats > mm.len() as u32 {
+        for idx in (0..mm.len()).into_iter().rev() {
+            let old_len = mm.len();
+            let (changed, iterations) = remove_certain_idx(mm, settings, idx);
+            extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+        }
     }
 
     'start: loop {
         for from_start in [false, true] {
-            if mm.len() < 2 || *iters >= max_attempts {
+            if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
                 break 'start;
             }
             let old_len = mm.len();
-            let (changed, iterations, new_len) = remove_some_content_from_start_end(mm, rng, settings, 3, from_start);
-            extend_results(changed, iterations, old_len, new_len, iters, mode);
+            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 3, from_start);
+            extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
         }
 
-        if mm.len() < 2 || *iters >= max_attempts {
+        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
             break 'start;
         }
         let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_continuous_content_from_middle(mm, rng, settings, 20);
-        extend_results(changed, iterations, old_len, new_len, iters, mode);
+        let (changed, iterations) = remove_continuous_content_from_middle(mm, rng, settings, 20);
+        extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
 
-        if mm.len() < 2 || *iters >= max_attempts {
+        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
             break 'start;
         }
         let old_len = mm.len();
-        let (changed, iterations, new_len) = remove_random_content_from_middle(mm, rng, settings, 20);
-        extend_results(changed, iterations, old_len, new_len, iters, mode);
+        let (changed, iterations) = remove_random_content_from_middle(mm, rng, settings, 20);
+        extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
     }
 }
 
@@ -148,11 +180,16 @@ fn extend_results(
     iterations: u32,
     old_len: usize,
     new_len: usize,
-    iterations_counter: &mut u32,
+    stats: &mut Stats,
     mode: Mode,
+    settings: &Settings,
 ) {
-    *iterations_counter += iterations;
+    stats.increase(iterations);
     if changed {
+        assert_ne!(old_len, new_len);
         println!("File was changed from {} to {} {}", old_len, new_len, mode);
+        if settings.reset_attempts {
+            stats.reset();
+        }
     }
 }

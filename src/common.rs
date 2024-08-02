@@ -95,12 +95,12 @@ pub fn prepare_random_indexes_to_remove<T>(
     thread_rng: &mut ThreadRng,
     max_iterations: usize,
 ) -> Vec<Vec<usize>> {
-    let iters = max(min(max_iterations, content.len().isqrt()), 1);
+    let stats = max(min(max_iterations, content.len().isqrt()), 1);
     let mut chosen_indexes = vec![];
 
-    for _ in 0..iters {
+    for _ in 0..stats {
         let mut current_indexes = vec![];
-        for _ in 0..=thread_rng.gen_range(1..=iters) {
+        for _ in 0..=thread_rng.gen_range(1..=stats) {
             current_indexes.push(thread_rng.gen_range(0..content.len()));
         }
         current_indexes.sort_unstable();

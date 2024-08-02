@@ -5,14 +5,14 @@ use crate::data_trait::DataTraits;
 use crate::settings::Settings;
 use rand::prelude::ThreadRng;
 use std::path::Path;
-use std::{fs, process};
+use std::{fs, mem, process};
 
 pub fn remove_random_content_from_middle<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
     max_iterations: usize,
-) -> (bool, u32, usize)
+) -> (bool, u32)
 where
     T: Clone,
 {
@@ -34,11 +34,11 @@ where
             .collect();
         let (is_broken, _output) = check_if_is_broken(content, &settings);
         if is_broken {
-            return (true, iterations_used, content.len());
+            return (true, iterations_used);
         }
         *content.get_mut_vec() = initial_content.clone();
     }
-    (false, iterations_used, content.len())
+    (false, iterations_used)
 }
 
 pub fn remove_continuous_content_from_middle<T>(
@@ -46,7 +46,7 @@ pub fn remove_continuous_content_from_middle<T>(
     thread_rng: &mut ThreadRng,
     settings: &Settings,
     max_iterations: usize,
-) -> (bool, u32, usize)
+) -> (bool, u32)
 where
     T: Clone,
 {
@@ -61,11 +61,31 @@ where
         *content.get_mut_vec() = content.get_vec()[start_idx..end_idx].to_vec();
         let (is_broken, _output) = check_if_is_broken(content, &settings);
         if is_broken {
-            return (true, iterations_used, content.len());
+            return (true, iterations_used);
         }
         *content.get_mut_vec() = initial_content.clone();
     }
-    (false, iterations_used, content.len())
+    (false, iterations_used)
+}
+
+pub fn remove_certain_idx<T>(content: &mut dyn DataTraits<T>, settings: &Settings, idx: usize) -> (bool, u32)
+where
+    T: Clone,
+{
+    assert!(content.len() >= 2);
+
+    let initial_content = content.get_vec().clone();
+
+    let mut new_content = mem::take(content.get_mut_vec());
+    new_content.remove(idx);
+
+    *content.get_mut_vec() = new_content;
+    let (is_broken, _output) = check_if_is_broken(content, &settings);
+    if is_broken {
+        return (true, 1);
+    }
+    *content.get_mut_vec() = initial_content.clone();
+    (false, 1)
 }
 
 pub fn remove_some_content_from_start_end<T>(
@@ -74,7 +94,7 @@ pub fn remove_some_content_from_start_end<T>(
     settings: &Settings,
     max_iterations: usize,
     from_start: bool,
-) -> (bool, u32, usize)
+) -> (bool, u32)
 where
     T: Clone,
 {
@@ -92,11 +112,11 @@ where
         }
         let (is_broken, _output) = check_if_is_broken(content, &settings);
         if is_broken {
-            return (true, iterations_used, content.len());
+            return (true, iterations_used);
         }
         *content.get_mut_vec() = initial_content.clone();
     }
-    (false, iterations_used, content.len())
+    (false, iterations_used)
 }
 
 pub fn load_content(settings: &Settings) -> Vec<u8> {

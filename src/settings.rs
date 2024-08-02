@@ -23,9 +23,9 @@ pub struct Settings {
         long,
         value_name = "NUMBER",
         help = "Reset attempts counter to start value, when file was minimized in current iteration",
-        default_value_t = 100
+        default_value_t = false
     )]
-    pub(crate) reset_attempts: u32,
+    pub(crate) reset_attempts: bool,
 
     #[arg(
         short,
