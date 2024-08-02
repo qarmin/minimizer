@@ -118,6 +118,8 @@ fn main() {
     }
 }
 
+// TODO when len is 1 return always function
+// if len is 2/3 run special mode, to check all permutations
 fn minimize_general<T>(
     stats: &mut Stats,
     settings: &Settings,
@@ -150,15 +152,6 @@ fn minimize_general<T>(
     }
 
     'start: loop {
-        for from_start in [false, true] {
-            if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
-                break 'start;
-            }
-            let old_len = mm.len();
-            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 3, from_start);
-            extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
-        }
-
         if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
             break 'start;
         }
@@ -172,6 +165,15 @@ fn minimize_general<T>(
         let old_len = mm.len();
         let (changed, iterations) = remove_random_content_from_middle(mm, rng, settings, 20);
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+
+        for from_start in [false, true] {
+            if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
+                break 'start;
+            }
+            let old_len = mm.len();
+            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 2, from_start);
+            extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+        }
     }
 }
 

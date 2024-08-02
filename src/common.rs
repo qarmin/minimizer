@@ -8,7 +8,13 @@ use std::process;
 use std::process::{Output, Stdio};
 
 pub fn create_command(settings: &Settings, file_name: &str) -> String {
-    settings.command.replace("{}", &format!("\"{}\"", file_name))
+    if settings.disable_file_name_escaping {
+        settings.command.replace(&settings.file_symbol, file_name)
+    } else {
+        settings
+            .command
+            .replace(&settings.file_symbol, &format!("\"{}\"", file_name))
+    }
 }
 
 pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String) {
@@ -27,7 +33,12 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
         .wait_with_output()
         .unwrap();
     let all = collect_output(&output);
-    (all.contains(&settings.broken_info), all)
+    let contains_broken_info = settings.broken_info.iter().any(|info| all.contains(info));
+    let contains_ignored_info = settings
+        .ignored_info
+        .as_ref()
+        .map_or(false, |ignored| ignored.iter().any(|info| all.contains(info)));
+    (contains_broken_info && !contains_ignored_info, all)
 }
 
 pub fn collect_output(output: &Output) -> String {
