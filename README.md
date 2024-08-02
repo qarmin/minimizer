@@ -1,4 +1,4 @@
-# Minimizator
+# Minimizer
 Minimizer is a program that is able to minimize the size of files so that they still meet the set requirements.
 
 It is the best suited for minimizing files for fast app, which one iteration takes less than second.

@@ -1,11 +1,13 @@
 [package]
 name = "minimizer"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["Rafał Mikrut"]
+homepage = "https://github.com/qarmin/minimizer"
 
 [dependencies]
 rand = "0.8"
 walkdir = "2.5"
 clap = { version = "4.5", features = ["derive"] }
-strum = "0.26.3"
-strum_macros = "0.26.4"
+strum = "0.26"
+strum_macros = "0.26"

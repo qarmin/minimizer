@@ -1,12 +1,12 @@
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(name = "Files minimizator")]
+#[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
 #[command(version = "1.0.0")]
 #[command(
     about = "Minimize files",
-    long_about = "App that minimizes files, to find smallest possible file that have."
+    long_about = "App that minimizes files, to find the smallest possible file that have certain output."
 )]
 pub struct Settings {
     #[arg(short, long, value_name = "INPUT", help = "Input file that will be minimized")]
@@ -48,7 +48,7 @@ pub struct Settings {
         short,
         long,
         value_name = "DISABLE_ESCAPING",
-        help = "Removes \"\" from file name, when passing to command, by default 'cargo {}' will be converted to \'cargo \"/home/user/some path.jpg\"'",
+        help = "Removes \"\" from file name, when passing replacing file symbol from command.\nBy default 'cargo {}' will be converted to \'cargo \"/home/user/some path.jpg\"'\nWith this flag it will be converted to 'cargo /home/user/some path.jpg' so you need to escape spaces in file name manually",
         default_value_t = false
     )]
     pub(crate) disable_file_name_escaping: bool,
