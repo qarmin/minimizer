@@ -6,6 +6,7 @@ authors = ["Rafał Mikrut"]
 description = "Minimize files to find minimal test case"
 homepage = "https://github.com/qarmin/minimizer"
 repository = "https://github.com/qarmin/minimizer"
+license = "MIT"
 
 [dependencies]
 rand = "0.8"
