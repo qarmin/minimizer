@@ -22,7 +22,7 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
         eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
         process::exit(1);
     }
-    let command = create_command(&settings, &settings.output_file);
+    let command = create_command(settings, &settings.output_file);
     let output = process::Command::new("sh")
         .arg("-c")
         .arg(&command)
@@ -59,7 +59,7 @@ pub fn collect_output(output: &Output) -> String {
 // Indexes are unique
 // Indexes are sorted by difference between them - at start we are checking if we can remove big chunk which should be more effective
 pub fn prepare_double_indexes_to_remove<T>(
-    content: &Vec<T>,
+    content: &[T],
     thread_rng: &mut ThreadRng,
     max_iterations: usize,
 ) -> Vec<(usize, usize)> {
@@ -81,7 +81,7 @@ pub fn prepare_double_indexes_to_remove<T>(
 }
 
 pub fn prepare_indexes_to_remove<T>(
-    content: &Vec<T>,
+    content: &[T],
     thread_rng: &mut ThreadRng,
     max_iterations: usize,
     from_start: bool,
@@ -102,7 +102,7 @@ pub fn prepare_indexes_to_remove<T>(
 }
 
 pub fn prepare_random_indexes_to_remove<T>(
-    content: &Vec<T>,
+    content: &[T],
     thread_rng: &mut ThreadRng,
     max_iterations: usize,
 ) -> Vec<Vec<usize>> {

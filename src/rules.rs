@@ -32,7 +32,7 @@ where
             .map(|(_, v)| v)
             .cloned()
             .collect();
-        let (is_broken, _output) = check_if_is_broken(content, &settings);
+        let (is_broken, _output) = check_if_is_broken(content, settings);
         if is_broken {
             return (true, iterations_used);
         }
@@ -59,7 +59,7 @@ where
     for (start_idx, end_idx) in chosen_indexes {
         iterations_used += 1;
         *content.get_mut_vec() = content.get_vec()[start_idx..end_idx].to_vec();
-        let (is_broken, _output) = check_if_is_broken(content, &settings);
+        let (is_broken, _output) = check_if_is_broken(content, settings);
         if is_broken {
             return (true, iterations_used);
         }
@@ -80,7 +80,7 @@ where
     new_content.remove(idx);
 
     *content.get_mut_vec() = new_content;
-    let (is_broken, _output) = check_if_is_broken(content, &settings);
+    let (is_broken, _output) = check_if_is_broken(content, settings);
     if is_broken {
         return (true, 1);
     }
@@ -110,7 +110,7 @@ where
         } else {
             *content.get_mut_vec() = content.get_vec()[..idx].to_vec();
         }
-        let (is_broken, _output) = check_if_is_broken(content, &settings);
+        let (is_broken, _output) = check_if_is_broken(content, settings);
         if is_broken {
             return (true, iterations_used);
         }

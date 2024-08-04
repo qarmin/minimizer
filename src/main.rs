@@ -18,16 +18,14 @@ mod data_trait;
 mod rules;
 mod settings;
 
+#[derive(Default)]
 pub struct Stats {
     pub(crate) all_iterations: u32,
     pub(crate) current_iteration_count: u32,
 }
 impl Stats {
     pub fn new() -> Self {
-        Stats {
-            all_iterations: 0,
-            current_iteration_count: 0,
-        }
+        Stats::default()
     }
     pub fn increase(&mut self, how_much: u32) {
         self.all_iterations += how_much;
@@ -144,7 +142,7 @@ fn minimize_general<T>(
 
     let available_stats = max_attempts - stats.current_iteration_count;
     if available_stats > 500 && mm.len() < 200 || settings.reset_attempts && available_stats > mm.len() as u32 {
-        for idx in (0..mm.len()).into_iter().rev() {
+        for idx in (0..mm.len()).rev() {
             let old_len = mm.len();
             let (changed, iterations) = remove_certain_idx(mm, settings, idx);
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);

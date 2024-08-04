@@ -42,7 +42,7 @@ pub struct MinimizationChars {
 }
 impl DataTraits<char> for MinimizationChars {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error> {
-        fs::write(file_name, &self.chars.iter().collect::<String>())
+        fs::write(file_name, self.chars.iter().collect::<String>())
     }
     fn get_mut_vec(&mut self) -> &mut Vec<char> {
         &mut self.chars

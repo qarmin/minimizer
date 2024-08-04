@@ -3,7 +3,9 @@ name = "minimizer"
 version = "1.0.0"
 edition = "2021"
 authors = ["Rafał Mikrut"]
+description = "Minimize files to find minimal test case"
 homepage = "https://github.com/qarmin/minimizer"
+repository = "https://github.com/qarmin/minimizer"
 
 [dependencies]
 rand = "0.8"
