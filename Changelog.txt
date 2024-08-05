@@ -1,0 +1,8 @@
+1.1.0 - 05.08.2024
+- New quiet mode, to not print unnecessary information
+- Fixed problem with invalid removing content from outside of range instead of inside - this was causing big degradation of time of minimization
+- Added special mode for <5 elements, to not fall into removing almost same elements again and again
+- Fixed problem with testing same content multiple times(not even 1 item was removed)
+
+1.0.0 - 04.08.2024
+- Initial version

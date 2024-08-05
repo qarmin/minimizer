@@ -69,4 +69,13 @@ pub struct Settings {
         help = "Content inside output of command, that will be ignored"
     )]
     pub(crate) ignored_info: Option<Vec<String>>,
+
+    #[arg(
+        short,
+        long,
+        value_name = "QUIET",
+        help = "Do not print any output, only errors",
+        default_value_t = false
+    )]
+    pub(crate) quiet: bool,
 }

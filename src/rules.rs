@@ -16,7 +16,7 @@ pub fn remove_random_content_from_middle<T>(
 where
     T: Clone,
 {
-    assert!(content.len() >= 2);
+    assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
 
     let chosen_indexes = prepare_random_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
@@ -50,7 +50,7 @@ pub fn remove_continuous_content_from_middle<T>(
 where
     T: Clone,
 {
-    assert!(content.len() >= 2);
+    assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
 
     let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
@@ -58,7 +58,9 @@ where
     let mut iterations_used = 0;
     for (start_idx, end_idx) in chosen_indexes {
         iterations_used += 1;
-        *content.get_mut_vec() = content.get_vec()[start_idx..end_idx].to_vec();
+        let mut new_vec = content.get_vec()[..start_idx].to_vec();
+        new_vec.extend_from_slice(&content.get_vec()[end_idx..]);
+        *content.get_mut_vec() = new_vec;
         let (is_broken, _output) = check_if_is_broken(content, settings);
         if is_broken {
             return (true, iterations_used);
@@ -72,7 +74,7 @@ pub fn remove_certain_idx<T>(content: &mut dyn DataTraits<T>, settings: &Setting
 where
     T: Clone,
 {
-    assert!(content.len() >= 2);
+    assert!(content.len() >= 5);
 
     let initial_content = content.get_vec().clone();
 
@@ -98,7 +100,7 @@ pub fn remove_some_content_from_start_end<T>(
 where
     T: Clone,
 {
-    assert!(content.len() >= 2);
+    assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
     let chosen_indexes = prepare_indexes_to_remove(content.get_vec(), thread_rng, max_iterations, from_start);
 
@@ -117,6 +119,46 @@ where
         *content.get_mut_vec() = initial_content.clone();
     }
     (false, iterations_used)
+}
+
+// When lines is 2-4, we can calculate all possible combinations and check them
+pub fn minimize_smaller_than_5_lines<T>(content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
+where
+    T: Clone,
+{
+    assert!(content.len() >= 2 && content.len() <= 4);
+    let initial_content = content.get_vec().clone();
+    let mut all_combinations: Vec<Vec<usize>> = vec![];
+
+    for i in 0..(content.len() - 1) {
+        let mut v = vec![];
+        for j in i..content.len() {
+            v.push(j);
+            all_combinations.push(v.clone());
+        }
+    }
+    // Removing all items is not needed
+    all_combinations.retain(|e| e.len() != content.len());
+    // Sort by number of items
+    all_combinations.sort_by(|a, b| b.len().cmp(&a.len()));
+
+    for indexes_to_remove in all_combinations {
+        *content.get_mut_vec() = content
+            .get_vec()
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| !indexes_to_remove.contains(idx))
+            .map(|(_, v)| v)
+            .cloned()
+            .collect();
+        let (is_broken, _output) = check_if_is_broken(content, settings);
+        if is_broken {
+            return true;
+        }
+        *content.get_mut_vec() = initial_content.clone();
+    }
+
+    false
 }
 
 pub fn load_content(settings: &Settings) -> Vec<u8> {

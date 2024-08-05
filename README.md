@@ -3,12 +3,16 @@ Minimizer is a program that is able to minimize the size of files so that they s
 
 It is the best suited for minimizing files for fast app, which one iteration takes less than second.
 
-Currently it works only on Linux
+Currently it works only on Linux and require nightly rust compiler.
 
 ## How to use
 - install rust, clone repo and build project
 ```
 cargo install --path .
+```
+or just compile it with crates.io
+```
+cargo install minimizer
 ```
 - run minimizer
 ```

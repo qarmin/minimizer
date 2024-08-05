@@ -64,19 +64,27 @@ pub fn prepare_double_indexes_to_remove<T>(
     max_iterations: usize,
 ) -> Vec<(usize, usize)> {
     let indexes_to_remove = max(min(max_iterations, content.len().isqrt()), 1);
-    let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
-        .map(|_| {
-            (
-                thread_rng.gen_range(0..content.len()),
-                thread_rng.gen_range(0..content.len()),
-            )
-        })
-        .map(|(a, b)| if a > b { (b, a) } else { (a, b) })
-        .filter(|(a, b)| a != b)
-        .collect();
+
+    let mut chosen_indexes;
+    loop {
+        chosen_indexes = (0..indexes_to_remove)
+            .map(|_| {
+                (
+                    thread_rng.gen_range(0..content.len()),
+                    thread_rng.gen_range(0..content.len()),
+                )
+            })
+            .map(|(a, b)| if a > b { (b, a) } else { (a, b) })
+            .filter(|(a, b)| a != b)
+            .collect::<Vec<_>>();
+        if !chosen_indexes.is_empty() {
+            break;
+        }
+    }
 
     chosen_indexes.sort_by(|(a1, b1), (a2, b2)| (b2 - a2).cmp(&(b1 - a1)));
     chosen_indexes.dedup();
+    assert!(!chosen_indexes.is_empty());
     chosen_indexes
 }
 
@@ -88,9 +96,9 @@ pub fn prepare_indexes_to_remove<T>(
 ) -> Vec<usize> {
     let start_idx = if from_start { 1 } else { 0 };
     let end_idx = if from_start { content.len() } else { content.len() - 1 };
-    let indexes_to_remove = max(min(max_iterations, content.len().isqrt()), 1);
+    let iterations = max(min(max_iterations, content.len().isqrt()), 1);
 
-    let mut chosen_indexes: Vec<_> = (0..indexes_to_remove)
+    let mut chosen_indexes: Vec<_> = (0..iterations)
         .map(|_| thread_rng.gen_range(start_idx..end_idx))
         .collect();
     chosen_indexes.sort_unstable();
@@ -98,6 +106,8 @@ pub fn prepare_indexes_to_remove<T>(
     if from_start {
         chosen_indexes.reverse();
     }
+
+    assert!(!chosen_indexes.is_empty());
     chosen_indexes
 }
 
@@ -106,12 +116,12 @@ pub fn prepare_random_indexes_to_remove<T>(
     thread_rng: &mut ThreadRng,
     max_iterations: usize,
 ) -> Vec<Vec<usize>> {
-    let stats = max(min(max_iterations, content.len().isqrt()), 1);
+    let iterations = max(min(max_iterations, content.len().isqrt()), 1);
     let mut chosen_indexes = vec![];
 
-    for _ in 0..stats {
+    for _ in 0..iterations {
         let mut current_indexes = vec![];
-        for _ in 0..=thread_rng.gen_range(1..=stats) {
+        for _ in 0..=thread_rng.gen_range(1..=iterations) {
             current_indexes.push(thread_rng.gen_range(0..content.len()));
         }
         current_indexes.sort_unstable();
@@ -121,5 +131,6 @@ pub fn prepare_random_indexes_to_remove<T>(
 
     chosen_indexes.sort_unstable();
     chosen_indexes.dedup();
+    assert!(!chosen_indexes.is_empty());
     chosen_indexes
 }

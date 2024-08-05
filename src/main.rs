@@ -8,8 +8,8 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::rules::{
-    load_content, remove_certain_idx, remove_continuous_content_from_middle, remove_random_content_from_middle,
-    remove_some_content_from_start_end,
+    load_content, minimize_smaller_than_5_lines, remove_certain_idx, remove_continuous_content_from_middle,
+    remove_random_content_from_middle, remove_some_content_from_start_end,
 };
 use crate::settings::Settings;
 
@@ -40,11 +40,15 @@ fn main() {
     let mut settings = Settings::parse();
     settings.command = settings.command.replace("\"", "'");
 
-    println!("Example command: {}", create_command(&settings, "test.jpg"));
+    if !settings.quiet {
+        println!("Example command: {}", create_command(&settings, "test.jpg"));
+    }
 
     let initial_file_content = load_content(&settings);
 
-    println!("Initial file size: {}", initial_file_content.len());
+    if !settings.quiet {
+        println!("Initial file size: {}", initial_file_content.len());
+    }
 
     let mb = MinimizationBytes {
         bytes: initial_file_content.clone(),
@@ -104,10 +108,12 @@ fn main() {
     let bytes = mb.len();
     match mb.save_to_file(&settings.output_file) {
         Ok(_) => {
-            println!(
-                "File {} was minimized to {} bytes, after {} iterations (limit was {}, retrying - {})",
-                &settings.output_file, bytes, stats.all_iterations, settings.attempts, settings.reset_attempts
-            );
+            if !settings.quiet {
+                println!(
+                    "File {} was minimized to {} bytes, after {} iterations (limit was {}, retrying - {})",
+                    &settings.output_file, bytes, stats.all_iterations, settings.attempts, settings.reset_attempts
+                );
+            }
         }
         Err(e) => {
             eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
@@ -128,16 +134,40 @@ fn minimize_general<T>(
 ) where
     T: Clone,
 {
-    println!("Using {mode} mode");
+    if !settings.quiet {
+        println!(
+            "Using {mode} mode ({}/{} attempts({} max in current mode, {} all iterations))",
+            stats.current_iteration_count, settings.attempts, max_attempts, stats.all_iterations
+        );
+    }
 
     // At start, we can try to remove big chunks from start/end - inside loop later, this is probably not effective
     for from_start in [false, true] {
-        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
+        let iterations = if from_start { 5 } else { 35 };
+
+        if mm.len() <= 4 {
+            if mm.len() >= 2 {
+                minimize_smaller_than_5_lines(mm, settings);
+            }
             return;
         }
+        if stats.current_iteration_count >= max_attempts {
+            return;
+        }
+
         let old_len = mm.len();
-        let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 20, from_start);
+        let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, iterations, from_start);
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+    }
+
+    if mm.len() <= 4 {
+        if mm.len() >= 2 {
+            minimize_smaller_than_5_lines(mm, settings);
+        }
+        return;
+    }
+    if stats.current_iteration_count >= max_attempts {
+        return;
     }
 
     let available_stats = max_attempts - stats.current_iteration_count;
@@ -150,14 +180,26 @@ fn minimize_general<T>(
     }
 
     'start: loop {
-        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
+        if mm.len() <= 4 {
+            if mm.len() >= 2 {
+                minimize_smaller_than_5_lines(mm, settings);
+            }
+            break 'start;
+        }
+        if stats.current_iteration_count >= max_attempts {
             break 'start;
         }
         let old_len = mm.len();
         let (changed, iterations) = remove_continuous_content_from_middle(mm, rng, settings, 20);
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
 
-        if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
+        if mm.len() <= 4 {
+            if mm.len() >= 2 {
+                minimize_smaller_than_5_lines(mm, settings);
+            }
+            break 'start;
+        }
+        if stats.current_iteration_count >= max_attempts {
             break 'start;
         }
         let old_len = mm.len();
@@ -165,7 +207,13 @@ fn minimize_general<T>(
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
 
         for from_start in [false, true] {
-            if mm.len() < 2 || stats.current_iteration_count >= max_attempts {
+            if mm.len() <= 4 {
+                if mm.len() >= 2 {
+                    minimize_smaller_than_5_lines(mm, settings);
+                }
+                break 'start;
+            }
+            if stats.current_iteration_count >= max_attempts {
                 break 'start;
             }
             let old_len = mm.len();
@@ -187,7 +235,12 @@ fn extend_results(
     stats.increase(iterations);
     if changed {
         assert_ne!(old_len, new_len);
-        println!("File was changed from {} to {} {}", old_len, new_len, mode);
+        if !settings.quiet {
+            println!(
+                "File was changed from {} to {} {} ({} attempt)",
+                old_len, new_len, mode, stats.all_iterations
+            );
+        }
         if settings.reset_attempts {
             stats.reset();
         }

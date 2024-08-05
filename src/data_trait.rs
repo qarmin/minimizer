@@ -52,7 +52,7 @@ impl DataTraits<char> for MinimizationChars {
     }
 }
 
-#[derive(Display, Copy, Clone)]
+#[derive(Display, Copy, Clone, Eq, PartialEq)]
 pub enum Mode {
     #[strum(serialize = "bytes")]
     Bytes,
