@@ -122,8 +122,6 @@ fn main() {
     }
 }
 
-// TODO when len is 1 return always function
-// if len is 2/3 run special mode, to check all permutations
 fn minimize_general<T>(
     stats: &mut Stats,
     settings: &Settings,
@@ -145,13 +143,7 @@ fn minimize_general<T>(
     for from_start in [false, true] {
         let iterations = if from_start { 5 } else { 35 };
 
-        if mm.len() <= 4 {
-            if mm.len() >= 2 {
-                minimize_smaller_than_5_lines(mm, settings);
-            }
-            return;
-        }
-        if stats.current_iteration_count >= max_attempts {
+        if !minimize_smaller_and_exit(mm, settings, max_attempts, stats) {
             return;
         }
 
@@ -160,13 +152,7 @@ fn minimize_general<T>(
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
     }
 
-    if mm.len() <= 4 {
-        if mm.len() >= 2 {
-            minimize_smaller_than_5_lines(mm, settings);
-        }
-        return;
-    }
-    if stats.current_iteration_count >= max_attempts {
+    if !minimize_smaller_and_exit(mm, settings, max_attempts, stats) {
         return;
     }
 
@@ -180,26 +166,14 @@ fn minimize_general<T>(
     }
 
     'start: loop {
-        if mm.len() <= 4 {
-            if mm.len() >= 2 {
-                minimize_smaller_than_5_lines(mm, settings);
-            }
-            break 'start;
-        }
-        if stats.current_iteration_count >= max_attempts {
+        if !minimize_smaller_and_exit(mm, settings, max_attempts, stats) {
             break 'start;
         }
         let old_len = mm.len();
         let (changed, iterations) = remove_continuous_content_from_middle(mm, rng, settings, 20);
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
 
-        if mm.len() <= 4 {
-            if mm.len() >= 2 {
-                minimize_smaller_than_5_lines(mm, settings);
-            }
-            break 'start;
-        }
-        if stats.current_iteration_count >= max_attempts {
+        if !minimize_smaller_and_exit(mm, settings, max_attempts, stats) {
             break 'start;
         }
         let old_len = mm.len();
@@ -207,13 +181,7 @@ fn minimize_general<T>(
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
 
         for from_start in [false, true] {
-            if mm.len() <= 4 {
-                if mm.len() >= 2 {
-                    minimize_smaller_than_5_lines(mm, settings);
-                }
-                break 'start;
-            }
-            if stats.current_iteration_count >= max_attempts {
+            if !minimize_smaller_and_exit(mm, settings, max_attempts, stats) {
                 break 'start;
             }
             let old_len = mm.len();
@@ -221,6 +189,19 @@ fn minimize_general<T>(
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
         }
     }
+}
+
+fn minimize_smaller_and_exit<T>(mm: &mut dyn DataTraits<T>, settings: &Settings, max_attempts: u32, stats: &Stats) -> bool where T: Clone {
+    if mm.len() <= 4 {
+        if mm.len() >= 2 {
+            minimize_smaller_than_5_lines(mm, settings);
+        }
+        return false;
+    }
+    if stats.current_iteration_count >= max_attempts {
+        return false;
+    }
+    true
 }
 
 fn extend_results(
