@@ -77,5 +77,40 @@ pub struct Settings {
         help = "Do not print any output, only errors",
         default_value_t = false
     )]
-    pub(crate) quiet: bool,
+    quiet: bool,
+
+    #[arg(
+        short,
+        long,
+        value_name = "VERBOSE",
+        help = "Prints more information",
+        default_value_t = false
+    )]
+    verbose: bool,
+
+    #[arg(
+        short,
+        long,
+        value_name = "PRINT_OUTPUT",
+        help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
+        default_value_t = false
+    )]
+    pub(crate) print_command_output: bool,
+
+    #[arg(
+        short = 'k',
+        long,
+        value_name = "ADDITIONAL_COMMAND",
+        help = "Runs additional command, e.g. \"ruff {}\" can be command and \"python3 -m compileall {}\" additional command to verify that output file is valid(in any sense of this word)"
+    )]
+    pub(crate) additional_command: Option<String>,
+}
+
+impl Settings {
+    pub fn is_normal_message_visible(&self) -> bool {
+        !self.quiet
+    }
+    pub fn is_verbose_message_visible(&self) -> bool {
+        !self.quiet && self.verbose
+    }
 }

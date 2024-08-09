@@ -6,7 +6,7 @@ It is the best suited for minimizing files for fast app, which one iteration tak
 Currently it works only on Linux and require nightly rust compiler.
 
 ## How to use
-- install rust, clone repo and build project
+- install nightly rust for linux, clone repo and build project
 ```
 cargo install --path .
 ```
@@ -53,3 +53,9 @@ At first app checks if file contains valid utf-8 characters, if yes, then two ad
 Each mode(which works on Vec<> of lines, chars and bytes) at start, tries to remove items from start/end of file.
 
 Later in loop random elements from middle/start/end are removed to check if file still returns expected output.
+
+## Why
+I just needed this - I doubt that it will be useful for anyone else.
+
+## License
+MIT License

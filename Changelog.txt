@@ -1,3 +1,10 @@
+1.2.0 - 09.08.2024
+- Improved algorithm to use later more aggressive minimization which takes more time
+- Decreased number of situations when iteration number exceeded limit(it is still possible)
+- Improved printed information about current iteration
+- Added ability to run custom command to check if produced file is proper
+- Optimize checking for less than 5 elements
+
 1.1.0 - 05.08.2024
 - New quiet mode, to not print unnecessary information
 - Fixed problem with invalid removing content from outside of range instead of inside - this was causing big degradation of time of minimization

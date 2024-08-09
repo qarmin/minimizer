@@ -3,6 +3,7 @@ use crate::common::{
 };
 use crate::data_trait::DataTraits;
 use crate::settings::Settings;
+use crate::Stats;
 use rand::prelude::ThreadRng;
 use std::path::Path;
 use std::{fs, mem, process};
@@ -11,7 +12,8 @@ pub fn remove_random_content_from_middle<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
-    max_iterations: usize,
+    max_tool_iterations: usize,
+    stats: &Stats,
 ) -> (bool, u32)
 where
     T: Clone,
@@ -19,7 +21,7 @@ where
     assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
 
-    let chosen_indexes = prepare_random_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
+    let chosen_indexes = prepare_random_indexes_to_remove(content.get_vec(), thread_rng, max_tool_iterations, stats);
 
     let mut iterations_used = 0;
     for indexes_to_remove in chosen_indexes {
@@ -45,7 +47,8 @@ pub fn remove_continuous_content_from_middle<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
-    max_iterations: usize,
+    max_tool_iterations: usize,
+    stats: &Stats,
 ) -> (bool, u32)
 where
     T: Clone,
@@ -53,7 +56,7 @@ where
     assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
 
-    let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng, max_iterations);
+    let chosen_indexes = prepare_double_indexes_to_remove(content.get_vec(), thread_rng, max_tool_iterations, stats);
 
     let mut iterations_used = 0;
     for (start_idx, end_idx) in chosen_indexes {
@@ -94,7 +97,8 @@ pub fn remove_some_content_from_start_end<T>(
     content: &mut dyn DataTraits<T>,
     thread_rng: &mut ThreadRng,
     settings: &Settings,
-    max_iterations: usize,
+    max_tool_iterations: usize,
+    stats: &Stats,
     from_start: bool,
 ) -> (bool, u32)
 where
@@ -102,7 +106,8 @@ where
 {
     assert!(content.len() >= 5);
     let initial_content = content.get_vec().clone();
-    let chosen_indexes = prepare_indexes_to_remove(content.get_vec(), thread_rng, max_iterations, from_start);
+    let chosen_indexes =
+        prepare_indexes_to_remove(content.get_vec(), thread_rng, max_tool_iterations, stats, from_start);
 
     let mut iterations_used = 0;
     for idx in chosen_indexes {
@@ -122,25 +127,35 @@ where
 }
 
 // When lines is 2-4, we can calculate all possible combinations and check them
+// It is the only mode that not takes into account number of iterations and can exceed it
 pub fn minimize_smaller_than_5_lines<T>(content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
 where
     T: Clone,
 {
     assert!(content.len() >= 2 && content.len() <= 4);
     let initial_content = content.get_vec().clone();
-    let mut all_combinations: Vec<Vec<usize>> = vec![];
 
-    for i in 0..(content.len() - 1) {
-        let mut v = vec![];
-        for j in i..content.len() {
-            v.push(j);
-            all_combinations.push(v.clone());
-        }
-    }
-    // Removing all items is not needed
-    all_combinations.retain(|e| e.len() != content.len());
-    // Sort by number of items
-    all_combinations.sort_by(|a, b| b.len().cmp(&a.len()));
+    let all_combinations: &[&[usize]] = match content.len() {
+        2 => &[&[0], &[1]],
+        3 => &[&[0, 1], &[0, 2], &[1, 2], &[0], &[1], &[2]],
+        4 => &[
+            &[0, 1, 2],
+            &[0, 1, 3],
+            &[0, 2, 3],
+            &[1, 2, 3],
+            &[0, 1],
+            &[0, 2],
+            &[0, 3],
+            &[1, 2],
+            &[1, 3],
+            &[2, 3],
+            &[0],
+            &[1],
+            &[2],
+            &[3],
+        ],
+        _ => unreachable!(),
+    };
 
     for indexes_to_remove in all_combinations {
         *content.get_mut_vec() = content
