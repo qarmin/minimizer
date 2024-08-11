@@ -77,7 +77,7 @@ pub fn remove_certain_idx<T>(content: &mut dyn DataTraits<T>, settings: &Setting
 where
     T: Clone,
 {
-    assert!(idx >= 0 && idx < content.len());
+    assert!(idx < content.len());
     let initial_content = content.get_vec().clone();
 
     let mut new_content = mem::take(content.get_mut_vec());

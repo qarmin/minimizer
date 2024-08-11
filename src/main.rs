@@ -196,7 +196,8 @@ fn minimize_general<T>(
                 break 'start;
             }
             let old_len = mm.len();
-            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, REMOVE_FROM_START_END_ITERS, stats, from_start);
+            let (changed, iterations) =
+                remove_some_content_from_start_end(mm, rng, settings, REMOVE_FROM_START_END_ITERS, stats, from_start);
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
         }
 
