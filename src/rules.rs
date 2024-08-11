@@ -77,8 +77,7 @@ pub fn remove_certain_idx<T>(content: &mut dyn DataTraits<T>, settings: &Setting
 where
     T: Clone,
 {
-    assert!(content.len() >= 5);
-
+    assert!(idx >= 0 && idx < content.len());
     let initial_content = content.get_vec().clone();
 
     let mut new_content = mem::take(content.get_mut_vec());
@@ -128,6 +127,7 @@ where
 
 // When lines is 2-4, we can calculate all possible combinations and check them
 // It is the only mode that not takes into account number of iterations and can exceed it
+// If app have stable results, this function should create the smallest possible file
 pub fn minimize_smaller_than_5_lines<T>(content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
 where
     T: Clone,

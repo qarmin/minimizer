@@ -144,6 +144,7 @@ fn minimize_general<T>(
     const REMOVE_FROM_MIDDLE_CONST_ITERS: usize = 20;
     const REMOVE_FROM_END_ITERS: usize = 35;
     const REMOVE_FROM_MIDDLE_RANDOM_ITERS: usize = 20;
+    const REMOVE_FROM_START_END_ITERS: usize = 2;
     const ONE_BY_ONE_LIMIT: usize = 100;
 
     if settings.is_verbose_message_visible() {
@@ -195,7 +196,7 @@ fn minimize_general<T>(
                 break 'start;
             }
             let old_len = mm.len();
-            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, 2, stats, from_start);
+            let (changed, iterations) = remove_some_content_from_start_end(mm, rng, settings, REMOVE_FROM_START_END_ITERS, stats, from_start);
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
         }
 
