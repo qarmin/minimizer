@@ -1,5 +1,3 @@
-#![feature(isqrt)]
-
 use clap::Parser;
 use rand::prelude::ThreadRng;
 use std::process;
@@ -46,10 +44,12 @@ fn main() {
 
     if settings.is_normal_message_visible() {
         println!(
-            "Starting to test file \"{}\" - Initial file size: {} bytes, with command: {}",
+            "Starting to test file \"{}\" - Initial file size: {} bytes, with command: \n{}\nList of searched strings: {:?}\nList of ignored strings: {:?}",
             settings.input_file,
             initial_file_content.len(),
-            create_command(&settings)
+            create_command(&settings),
+            settings.broken_info,
+            settings.ignored_info
         );
     }
 

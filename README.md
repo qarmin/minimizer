@@ -3,10 +3,10 @@ Minimizer is a program that is able to minimize the size of files so that they s
 
 It is the best suited for minimizing files for fast app, which one iteration takes less than second.
 
-Currently it works only on Linux and require nightly rust compiler.
+Currently it works only on Linux.
 
 ## How to use
-- install nightly rust for linux, clone repo and build project
+- install rust on linux, clone repo and build project
 ```
 cargo install --path .
 ```
@@ -53,6 +53,17 @@ At first app checks if file contains valid utf-8 characters, if yes, then two ad
 Each mode(which works on Vec<> of lines, chars and bytes) at start, tries to remove items from start/end of file.
 
 Later in loop random elements from middle/start/end are removed to check if file still returns expected output.
+
+## Typical commands
+### Ruff
+```
+minimizer --input-file /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.py --output-file a.py --command "red_knot" --attempts 1000 --broken-info "RUST_BACKTRACE" -z "not yet implemented" -z "failed to parse" -z "SyntaxError" -z "Sorry:" -z "IndentationError" -k "python3 -m compileall {}" -r -v
+```
+
+### Red Knot
+```
+minimizer --input-file /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.py --output-file a.py --command "red_knot" --attempts 1000 --broken-info "RUST_BACKTRACE" -z "not yet implemented" -z "failed to parse" -z "SyntaxError" -z "Sorry:" -z "IndentationError" -k "python3 -m compileall {}" -r -v
+```
 
 ## Why
 I just needed this - I doubt that it will be useful for anyone else.

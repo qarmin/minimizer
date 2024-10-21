@@ -88,6 +88,15 @@ pub struct Settings {
     )]
     verbose: bool,
 
+    // #[arg(
+    //     short="vv",
+    //     long,
+    //     value_name = "EXTRA_VERBOSE",
+    //     help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
+    //     default_value_t = false
+    // )]
+    // extra_verbose: bool,
+
     #[arg(
         short,
         long,
@@ -106,6 +115,7 @@ pub struct Settings {
     pub(crate) additional_command: Option<String>,
 }
 
+
 impl Settings {
     pub fn is_normal_message_visible(&self) -> bool {
         !self.quiet
@@ -113,4 +123,10 @@ impl Settings {
     pub fn is_verbose_message_visible(&self) -> bool {
         !self.quiet && self.verbose
     }
+    // pub fn is_verbose_message_visible(&self) -> bool {
+    //     !self.quiet && (self.verbose || self.extra_verbose)
+    // }
+    // pub fn is_extra_verbose_message_visible(&self) -> bool {
+    //     !self.quiet && self.extra_verbose
+    // }
 }

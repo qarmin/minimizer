@@ -33,6 +33,8 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
     }
     let command = create_command(settings);
 
+    // TODO split into 2 different commands
+    let start_time = std::time::Instant::now();
     let output = process::Command::new("sh")
         .arg("-c")
         .arg(&command)
@@ -42,6 +44,7 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
         .unwrap()
         .wait_with_output()
         .unwrap();
+    let elapsed = start_time.elapsed();
     let all = collect_output(&output);
 
     let contains_broken_info = settings.broken_info.iter().any(|info| all.contains(info));
@@ -54,8 +57,8 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
 
     if settings.print_command_output && settings.is_normal_message_visible() {
         println!(
-            "{}\nMinimization result - contains broken info \"{}\", contains_ignored_info \"{}\"",
-            all, contains_broken_info, contains_ignored_info
+            "=========================\n{}\nMinimization result - contains broken info \"{}\", contains ignored info \"{}\", is broken \"{}\", took {elapsed:?}\n=========================",
+            all, contains_broken_info, contains_ignored_info, is_broken
         );
     }
 
@@ -162,7 +165,7 @@ pub fn prepare_random_indexes_to_remove<T>(
 fn get_number_of_iterations<T>(stats: &Stats, max_iterations: usize, content: &[T]) -> usize {
     let max_available_iterations = (stats.max_attempts - stats.current_iteration_count) as usize;
     max(
-        min(min(max_iterations, content.len().isqrt()), max_available_iterations),
+        min(min(max_iterations, (content.len() as f32).sqrt() as usize), max_available_iterations),
         1,
     )
 }
