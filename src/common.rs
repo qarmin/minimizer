@@ -1,5 +1,5 @@
 use crate::data_trait::DataTraits;
-use crate::settings::Settings;
+use crate::settings::{get_temp_file, Settings};
 use crate::Stats;
 use rand::prelude::ThreadRng;
 use rand::Rng;
@@ -9,9 +9,9 @@ use std::process;
 use std::process::{Output, Stdio};
 
 pub fn create_command(settings: &Settings) -> String {
-    let base_command = create_single_command_str(settings, &settings.output_file, &settings.command);
+    let base_command = create_single_command_str(settings, &get_temp_file(), &settings.command);
     if let Some(additional_command) = &settings.additional_command {
-        let new_command = create_single_command_str(settings, &settings.output_file, additional_command);
+        let new_command = create_single_command_str(settings, &get_temp_file(), additional_command);
         format!("{base_command}; {new_command}")
     } else {
         base_command
@@ -27,8 +27,8 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
 }
 
 pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String) {
-    if let Err(e) = content.save_to_file(&settings.output_file) {
-        eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
+    if let Err(e) = content.save_to_file(&get_temp_file()) {
+        eprintln!("Error writing file {}, reason {}", &get_temp_file(), e);
         process::exit(1);
     }
     let command = create_command(settings);
@@ -60,6 +60,14 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
             "=========================\n{}\nMinimization result - contains broken info \"{}\", contains ignored info \"{}\", is broken \"{}\", took {elapsed:?}\n=========================",
             all, contains_broken_info, contains_ignored_info, is_broken
         );
+    }
+
+    // Also saves to output file, to be able to get results even if app will be stopped
+    if is_broken {
+        if let Err(e) = content.save_to_file(&settings.output_file) {
+            eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
+            process::exit(1);
+        }
     }
 
     (is_broken, all)

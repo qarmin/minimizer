@@ -1,8 +1,6 @@
-use crate::common::{
-    check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove, prepare_random_indexes_to_remove,
-};
+use crate::common::{check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove, prepare_random_indexes_to_remove};
 use crate::data_trait::DataTraits;
-use crate::settings::Settings;
+use crate::settings::{get_temp_file, Settings};
 use crate::Stats;
 use rand::prelude::ThreadRng;
 use std::path::Path;
@@ -82,6 +80,25 @@ where
 
     let mut new_content = mem::take(content.get_mut_vec());
     new_content.remove(idx);
+
+    *content.get_mut_vec() = new_content;
+    let (is_broken, _output) = check_if_is_broken(content, settings);
+    if is_broken {
+        return (true, 1);
+    }
+    *content.get_mut_vec() = initial_content.clone();
+    (false, 1)
+}
+pub fn remove_certain_continous_indexes<T>(content: &mut dyn DataTraits<T>, settings: &Settings, start_idx: usize, end_idx: usize) -> (bool, u32)
+where
+    T: Clone,
+{
+    assert!(start_idx < content.len());
+    assert!(end_idx < content.len());
+    let initial_content = content.get_vec().clone();
+
+    let mut new_content = mem::take(content.get_mut_vec());
+    new_content.drain(start_idx..end_idx);
 
     *content.get_mut_vec() = new_content;
     let (is_broken, _output) = check_if_is_broken(content, settings);
@@ -176,7 +193,7 @@ where
     false
 }
 
-pub fn load_content(settings: &Settings) -> Vec<u8> {
+pub fn load_and_check_files(settings: &Settings) -> Vec<u8> {
     if !Path::new(&settings.input_file).exists() {
         eprintln!("File {} does not exists", &settings.input_file);
         process::exit(1);
@@ -189,15 +206,18 @@ pub fn load_content(settings: &Settings) -> Vec<u8> {
         }
     };
 
-    if let Err(e) = fs::write(&settings.output_file, &content) {
-        eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
-        process::exit(1);
+    for file in [get_temp_file(), settings.output_file.clone()] {
+        if let Err(e) = fs::write(&file, &content) {
+            eprintln!("Error writing file {}, reason {}", &file, e);
+            process::exit(1);
+        }
+
+        if let Err(e) = fs::remove_file(&file) {
+            eprintln!("Error removing file {}, reason {}", &file, e);
+            process::exit(1);
+        }
     }
 
-    if let Err(e) = fs::remove_file(&settings.output_file) {
-        eprintln!("Error removing file {}, reason {}", &settings.output_file, e);
-        process::exit(1);
-    }
 
     content
 }

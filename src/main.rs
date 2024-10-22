@@ -1,15 +1,11 @@
-use clap::Parser;
-use rand::prelude::ThreadRng;
-use std::process;
-use std::time::Instant;
-
 use crate::common::{check_if_is_broken, create_command};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
-use crate::rules::{
-    load_content, minimize_smaller_than_5_lines, remove_certain_idx, remove_continuous_content_from_middle,
-    remove_random_content_from_middle, remove_some_content_from_start_end,
-};
+use crate::rules::{ load_and_check_files, minimize_smaller_than_5_lines, remove_certain_continous_indexes, remove_certain_idx, remove_continuous_content_from_middle, remove_random_content_from_middle, remove_some_content_from_start_end};
 use crate::settings::Settings;
+use clap::Parser;
+use rand::prelude::ThreadRng;
+use std::{fs, process};
+use std::time::Instant;
 
 mod common;
 mod data_trait;
@@ -26,6 +22,9 @@ impl Stats {
     pub fn new() -> Self {
         Stats::default()
     }
+    pub fn available(&self) -> u32 {
+        self.max_attempts - self.current_iteration_count
+    }
     pub fn increase(&mut self, how_much: u32) {
         self.all_iterations += how_much;
         self.current_iteration_count += how_much;
@@ -40,7 +39,7 @@ fn main() {
     settings.command = settings.command.replace("\"", "'");
 
     let start_time = Instant::now();
-    let initial_file_content = load_content(&settings);
+    let initial_file_content = load_and_check_files(&settings);
 
     if settings.is_normal_message_visible() {
         println!(
@@ -65,6 +64,11 @@ fn main() {
         eprintln!("==================OUTPUT==================");
         eprintln!("{initial_output}");
         eprintln!("===========================================");
+        process::exit(1);
+    }
+
+    if let Err(e) = fs::copy(&settings.input_file, &settings.output_file) {
+        eprintln!("Error copying file {}, reason {}", &settings.output_file, e);
         process::exit(1);
     }
 
@@ -154,6 +158,22 @@ fn minimize_general<T>(
         );
     }
 
+    if !minimize_smaller_and_or_exit(mm, settings, stats) {
+        return;
+    }
+
+    if stats.available() >= 30 * mm.len() as u32 {
+        println!("Using special mode to remove content from end");
+        for idx in 1..(mm.len() - 1) {
+            let old_len = mm.len();
+            let (changed, iterations) =  remove_certain_continous_indexes(mm, settings, idx, old_len - 1);
+            extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+            if changed{
+                break; // We cannot minimize this more, because we remove content from end
+            }
+        }
+    }
+
     // At start, we can try to remove big chunks from start/end - inside loop later, this is probably not effective
     for from_start in [false, true] {
         let iterations = if from_start {
@@ -170,6 +190,36 @@ fn minimize_general<T>(
         let (changed, iterations) =
             remove_some_content_from_start_end(mm, rng, settings, iterations, stats, from_start);
         extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+    }
+
+    // This step is designed to remove some chunks from middle
+    // Random checking won't check all this possibilities so this should be more effective
+    if stats.available() >= 50 * mm.len() as u32 {
+        println!("Using special mode to remove content from middle");
+        // offset allows to start from different position, it is done mostly for 2 step
+        // to be able to check entire file with overlapped 2 byte windows
+        'outside: for i in [150, 50, 10, 5, 2] {
+            for off in [0, 1] {
+                let start_len = ((mm.len() - off) % i) + i;
+                if start_len >= mm.len() {
+                    continue;
+                }
+                for j in (start_len..mm.len()).step_by(i).rev() {
+                    let start_idx = j - i;
+                    let end_idx = j;
+                    let old_len = mm.len();
+                    let (changed, iterations) = remove_certain_continous_indexes(mm, settings, start_idx, end_idx);
+                    extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
+                    if mm.len() <= 4 {
+                        break 'outside;
+                    }
+                }
+            }
+        }
+        if !minimize_smaller_and_or_exit(mm, settings, stats) {
+            eprintln!("Step with minimizing in windows, should not ends entire checking");
+            return;
+        }
     }
 
     let mut minimized_one_by_one = false;
@@ -201,8 +251,7 @@ fn minimize_general<T>(
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
         }
 
-        let available_iterations = stats.max_attempts - stats.current_iteration_count;
-        if !minimized_one_by_one && mm.len() <= ONE_BY_ONE_LIMIT && available_iterations > mm.len() as u32 {
+        if !minimized_one_by_one && mm.len() <= ONE_BY_ONE_LIMIT && stats.available() > mm.len() as u32 {
             if !minimize_smaller_and_or_exit(mm, settings, stats) {
                 break 'start;
             }

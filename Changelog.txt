@@ -1,6 +1,7 @@
-1.2.2 - 21.10.2024
+1.3.0 - ?.10.2024
 - Added ability to compile app with stable rust
 - Added checking time how long command takes
+- To output file now is written only broken data, so program can be now stopped in any moment
 
 1.2.1 - 11.08.2024
 - Fixed panic `assertion failed: content.len() >= 5`

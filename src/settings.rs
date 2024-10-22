@@ -1,5 +1,14 @@
 use clap::Parser;
 
+
+thread_local! {
+    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}", std::process::id());
+}
+
+pub fn get_temp_file() -> String {
+    TEMP_FILE.with(|f| f.clone())
+}
+
 #[derive(Parser)]
 #[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
