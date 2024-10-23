@@ -1,4 +1,6 @@
-use crate::common::{check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove, prepare_random_indexes_to_remove};
+use crate::common::{
+    check_if_is_broken, prepare_double_indexes_to_remove, prepare_indexes_to_remove, prepare_random_indexes_to_remove,
+};
 use crate::data_trait::DataTraits;
 use crate::settings::{get_temp_file, Settings};
 use crate::Stats;
@@ -89,7 +91,12 @@ where
     *content.get_mut_vec() = initial_content.clone();
     (false, 1)
 }
-pub fn remove_certain_continous_indexes<T>(content: &mut dyn DataTraits<T>, settings: &Settings, start_idx: usize, end_idx: usize) -> (bool, u32)
+pub fn remove_certain_continous_indexes<T>(
+    content: &mut dyn DataTraits<T>,
+    settings: &Settings,
+    start_idx: usize,
+    end_idx: usize,
+) -> (bool, u32)
 where
     T: Clone,
 {
@@ -217,7 +224,6 @@ pub fn load_and_check_files(settings: &Settings) -> Vec<u8> {
             process::exit(1);
         }
     }
-
 
     content
 }

@@ -1,6 +1,5 @@
 use clap::Parser;
 
-
 thread_local! {
     pub static TEMP_FILE: String = format!("/tmp/minimizer_{}", std::process::id());
 }
@@ -105,7 +104,6 @@ pub struct Settings {
     //     default_value_t = false
     // )]
     // extra_verbose: bool,
-
     #[arg(
         short,
         long,
@@ -123,7 +121,6 @@ pub struct Settings {
     )]
     pub(crate) additional_command: Option<String>,
 }
-
 
 impl Settings {
     pub fn is_normal_message_visible(&self) -> bool {

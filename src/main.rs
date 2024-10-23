@@ -1,11 +1,14 @@
 use crate::common::{check_if_is_broken, create_command};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
-use crate::rules::{ load_and_check_files, minimize_smaller_than_5_lines, remove_certain_continous_indexes, remove_certain_idx, remove_continuous_content_from_middle, remove_random_content_from_middle, remove_some_content_from_start_end};
+use crate::rules::{
+    load_and_check_files, minimize_smaller_than_5_lines, remove_certain_continous_indexes, remove_certain_idx,
+    remove_continuous_content_from_middle, remove_random_content_from_middle, remove_some_content_from_start_end,
+};
 use crate::settings::Settings;
 use clap::Parser;
 use rand::prelude::ThreadRng;
-use std::{fs, process};
 use std::time::Instant;
+use std::{fs, process};
 
 mod common;
 mod data_trait;
@@ -166,9 +169,9 @@ fn minimize_general<T>(
         println!("Using special mode to remove content from end");
         for idx in 1..(mm.len() - 1) {
             let old_len = mm.len();
-            let (changed, iterations) =  remove_certain_continous_indexes(mm, settings, idx, old_len - 1);
+            let (changed, iterations) = remove_certain_continous_indexes(mm, settings, idx, old_len - 1);
             extend_results(changed, iterations, old_len, mm.len(), stats, mode, settings);
-            if changed{
+            if changed {
                 break; // We cannot minimize this more, because we remove content from end
             }
         }

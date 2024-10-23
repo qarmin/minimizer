@@ -173,7 +173,10 @@ pub fn prepare_random_indexes_to_remove<T>(
 fn get_number_of_iterations<T>(stats: &Stats, max_iterations: usize, content: &[T]) -> usize {
     let max_available_iterations = (stats.max_attempts - stats.current_iteration_count) as usize;
     max(
-        min(min(max_iterations, (content.len() as f32).sqrt() as usize), max_available_iterations),
+        min(
+            min(max_iterations, (content.len() as f32).sqrt() as usize),
+            max_available_iterations,
+        ),
         1,
     )
 }
