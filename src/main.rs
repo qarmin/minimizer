@@ -108,7 +108,7 @@ fn main() {
     stats.max_attempts = settings.attempts;
     minimize_general(&mut stats, &settings, &mut mb, Mode::Bytes, &mut rng);
 
-    if !check_if_is_broken(&mb, &settings) {
+    if !check_if_is_broken(&mb, &settings).0 {
         if settings.is_normal_message_visible() {
             eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
             eprintln!("==================COMMAND=================");
