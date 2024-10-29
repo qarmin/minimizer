@@ -108,8 +108,20 @@ fn main() {
     stats.max_attempts = settings.attempts;
     minimize_general(&mut stats, &settings, &mut mb, Mode::Bytes, &mut rng);
 
-    let bytes = mb.len();
+    if !check_if_is_broken(&mb, &settings) {
+        if settings.is_normal_message_visible() {
+            eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
+            eprintln!("==================COMMAND=================");
+            eprintln!("{}", create_command(&settings));
+            eprintln!("==================OUTPUT==================");
+            eprintln!("{initial_output}");
+            eprintln!("==================CONTENT=================");
+            eprintln!("{}", String::from_utf8_lossy(&mb.bytes));
+            eprintln!("===========================================");
+        }
+    }
 
+    let bytes = mb.len();
     match mb.save_to_file(&settings.output_file) {
         Ok(_) => {
             if settings.is_normal_message_visible() {
