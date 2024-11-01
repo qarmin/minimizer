@@ -1,0 +1,44 @@
+name: 🐧 Minimizator build
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ruff-normal-ci:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ruff
+        run: |
+          cargo install --path .
+
+      - name: Prepare files
+        run: |
+          mkdir -p test
+          cd test
+          echo "ABCDEFGH" > input.txt
+          echo "gAFWWQFFQWFQW QWERTY AF ASF WF WA WAF AWWTQWAGFASFG ASGF AF ASF ASF SG ASG ASfasfasfqwtgwqa afafasfasfaqawgwfsfzsdfAgafzczdsfasfasfasfBCDEFFGH" >> input.txt
+          echo "BCDERfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffF" >> input.txt
+          echo "ABCD" >> input.txt
+          echo "BDCE" >> input.txt
+          cd ..
+
+      - name: Minimize files
+        run: |
+          cd test
+          minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 1000 --broken-info "QWER" -r
+          cd ..
+
+      - name: Test result
+        run: |
+          # Check if output.txt is equal to expected.txt
+          cd test
+          echo "QWER" > expected.txt
+          diff output.txt expected.txt
+
