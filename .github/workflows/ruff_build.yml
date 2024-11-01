@@ -39,6 +39,6 @@ jobs:
         run: |
           # Check if output.txt is equal to expected.txt
           cd test
-          echo "QWER" > expected.txt
+          printf "QWER" > expected.txt
           diff output.txt expected.txt
 
