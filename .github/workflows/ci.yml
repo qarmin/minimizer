@@ -48,5 +48,5 @@ jobs:
       - name: Minimize files, hit timeout
         run: |
           cd test
-          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --additional_command "sleep 5" --attempts 1000 --broken-info "QWER" -r -v --max_time 10
+          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --additional-command "sleep 5" --attempts 1000 --broken-info "QWER" -r -v --max-time 10
           cd ..
