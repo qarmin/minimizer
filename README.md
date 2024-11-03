@@ -33,7 +33,7 @@ echo "BDCE" >> input.txt
 ```
 running 
 ```
-minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 300 --broken-info "AB"
+minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 300 --broken-info "AB" -e -v
 ```
 will probably give you output.txt with content
 ```
@@ -53,6 +53,13 @@ At first app checks if file contains valid utf-8 characters, if yes, then two ad
 Each mode(which works on Vec<> of lines, chars and bytes) at start, tries to remove items from start/end of file.
 
 Later in loop random elements from middle/start/end are removed to check if file still returns expected output.
+
+## Different strategies
+Basing on different files, different strategies can be used to minimize file.
+
+In repo only one general strategy is implemented, which should be good for most of the files.
+
+But if you have some specific file, you can implement your own strategy 
 
 ## Typical commands
 ### Ruff

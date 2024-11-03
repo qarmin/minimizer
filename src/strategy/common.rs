@@ -1,11 +1,23 @@
-use std::process;
-
 use crate::data_trait::{DataTraits, Mode};
 use crate::rules::Rule;
 use crate::settings::Settings;
-use crate::strategy::general::ProcessStatus;
 use crate::{Stats, START_TIME};
+use rand::prelude::ThreadRng;
+use std::process;
 
+
+pub trait Strategy<T> where
+    T: Clone {
+    fn minimize(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
+
+}
+
+
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+pub enum ProcessStatus {
+    Continue,
+    Stop,
+}
 pub(crate) fn extend_results(
     changed: bool,
     iterations: u32,
@@ -51,9 +63,9 @@ pub(crate) fn check_if_exceeded_iterations(stats: &Stats) -> ProcessStatus {
 
 #[must_use]
 pub(crate) fn check_if_stopping_minimization<T>(
-    stats: &mut Stats,
+    stats: &Stats,
     settings: &Settings,
-    mm: &mut dyn DataTraits<T>,
+    mm: &dyn DataTraits<T>,
     check_length: bool,
 ) -> ProcessStatus
 where

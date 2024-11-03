@@ -8,7 +8,8 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::settings::Settings;
-use crate::strategy::general::minimize_general;
+use crate::strategy::common::Strategy;
+use crate::strategy::general::{GeneralStrategy};
 
 mod common;
 mod data_trait;
@@ -143,14 +144,14 @@ fn minimize_content(
             lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
         };
         stats.max_attempts = settings.attempts / 3;
-        minimize_general(stats, settings, &mut ms, rng);
+        GeneralStrategy::minimize(stats, settings, &mut ms, rng);
 
         let mut mc = MinimizationChars {
             mode: Mode::Chars,
             chars: ms.lines.join("\n").chars().collect(),
         };
         stats.max_attempts = settings.attempts * 2 / 3;
-        minimize_general(stats, settings, &mut mc, rng);
+        GeneralStrategy::minimize(stats, settings, &mut mc, rng);
 
         mb = MinimizationBytes {
             mode: Mode::Bytes,
@@ -164,7 +165,7 @@ fn minimize_content(
     }
 
     stats.max_attempts = settings.attempts;
-    minimize_general(stats, settings, &mut mb, rng);
+    GeneralStrategy::minimize(stats, settings, &mut mb, rng);
 
     mb
 }

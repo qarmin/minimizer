@@ -3,15 +3,29 @@ use rand::prelude::ThreadRng;
 use crate::data_trait::DataTraits;
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
-use crate::strategy::common::{
-    check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken,
-};
+use crate::strategy::common::{check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken, ProcessStatus, Strategy};
 use crate::Stats;
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
-pub enum ProcessStatus {
-    Continue,
-    Stop,
+
+pub struct GeneralStrategy<T> {
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<T> Strategy<T> for GeneralStrategy<T> where
+    T: Clone {
+    fn minimize(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng)
+
+    {
+        minimize_general_internal(stats, settings, mm, rng);
+
+        // After minimization to less than 5 elements, we try to remove all combinations of 2, 3, 4 elements
+
+        if mm.len() <= 4 && mm.len() >= 2 {
+            let all_combination_rules = Rule::create_all_combinations_rule(mm.len());
+            let _ = execute_rules_until_first_found_broken(all_combination_rules, stats, settings, mm, false);
+        }
+    }
+
 }
 
 fn minimize_general_internal<T>(
@@ -59,19 +73,5 @@ pub fn get_random_rule(content_size: usize) -> Rule {
         RuleType::RemoveFromEnd => Rule::create_start_end_rule(content_size, 1, false)[0].clone(),
         RuleType::RemoveContinuousFromMiddle => Rule::create_continuous_rule(content_size),
         RuleType::RemoveRandom => Rule::create_random_rule(content_size, None),
-    }
-}
-
-pub fn minimize_general<T>(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng)
-where
-    T: Clone,
-{
-    minimize_general_internal(stats, settings, mm, rng);
-
-    // After minimization to less than 5 elements, we try to remove all combinations of 2, 3, 4 elements
-
-    if mm.len() <= 4 && mm.len() >= 2 {
-        let all_combination_rules = Rule::create_all_combinations_rule(mm.len());
-        let _ = execute_rules_until_first_found_broken(all_combination_rules, stats, settings, mm, false);
     }
 }
