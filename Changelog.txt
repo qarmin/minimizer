@@ -1,4 +1,4 @@
-2.0.0 - ??.??.2024
+2.0.0 - 03.11.2024
 - Simplify code related to rules
 - Allowed to use different minimization strategies
 - Ability to set max time

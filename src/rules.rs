@@ -148,6 +148,11 @@ impl Rule {
             })
             .collect()
     }
+    pub fn crete_remove_exact_idx_rule(idxs: Vec<usize>) -> Rule {
+        Rule::RemoveRandom {
+            indexes_to_remove: idxs,
+        }
+    }
     pub fn execute<T>(&self, stats: &Stats, content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
     where
         T: Clone,

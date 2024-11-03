@@ -116,7 +116,7 @@ pub struct Settings {
     pub(crate) print_command_output: bool,
 
     #[arg(
-        short,
+        short = 't',
         long,
         value_name = "MAX_TIME_SECONDS",
         help = "Max time in seconds that minimization can take(this time will be exceeded, because minimizer needs to finish current iteration)"

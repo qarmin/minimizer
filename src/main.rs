@@ -10,6 +10,7 @@ use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, Minimi
 use crate::settings::Settings;
 use crate::strategy::common::{Strategies, Strategy};
 use crate::strategy::general::GeneralStrategy;
+use crate::strategy::pedantic::PedanticStrategy;
 
 mod common;
 mod data_trait;
@@ -173,6 +174,6 @@ fn minimize_content(
 pub fn get_strategy<T: Clone + 'static>(settings: &Settings) -> Box<dyn Strategy<T>> {
     match settings.strategy {
         Strategies::General => Box::new(GeneralStrategy::<T>::new()),
-        Strategies::Pedantic => panic!("Pedantic strategy is not implemented yet"),
+        Strategies::Pedantic => Box::new(PedanticStrategy::<T>::new()),
     }
 }

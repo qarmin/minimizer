@@ -13,18 +13,19 @@ use crate::Stats;
 // How this works:
 // - Tries to remove elements from start and end(quite easy way to remove a lot of elements)
 // - Randomly removes elements from the middle
+// - If less that 100 elements left and more than 100 attempts available, tries to remove all elements one by one, starting from the end
 // - If less than 5 elements left, tries to remove all combinations of 2, 3, 4 elements
-pub struct GeneralStrategy<T> {
+pub struct PedanticStrategy<T> {
     _phantom: std::marker::PhantomData<T>,
 }
-impl<T> GeneralStrategy<T> {
+impl<T> PedanticStrategy<T> {
     pub(crate) fn new() -> Self {
         Self {
             _phantom: std::marker::PhantomData,
         }
     }
 }
-impl<T> Strategy<T> for GeneralStrategy<T>
+impl<T> Strategy<T> for PedanticStrategy<T>
 where
     T: Clone,
 {
@@ -45,7 +46,7 @@ where
     T: Clone,
 {
     const REMOVE_FROM_START_ITERS: usize = 5;
-    const REMOVE_FROM_END_ITERS: usize = 35;
+    const REMOVE_FROM_END_ITERS: usize = 20;
 
     for (iters, from_start) in [(REMOVE_FROM_START_ITERS, true), (REMOVE_FROM_END_ITERS, false)] {
         if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
@@ -58,13 +59,39 @@ where
         };
     }
 
+    const MINIMIZE_SMALLER_THAN: usize = 100;
+    let mut minimized_smaller_than = false;
+
     loop {
+        if !minimized_smaller_than
+            && mm.len() < MINIMIZE_SMALLER_THAN
+            && stats.available() > MINIMIZE_SMALLER_THAN as u32
+        {
+            minimized_smaller_than = true;
+            minimize_smaller_than(stats, settings, mm);
+        } else {
+            if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
+                return;
+            }
+            let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
+        }
+    }
+}
+
+pub fn minimize_smaller_than<T: Clone>(
+    stats: &mut Stats,
+    settings: &Settings,
+    mm: &mut dyn DataTraits<T>,
+) -> ProcessStatus {
+    for id in (0..mm.len()).rev() {
         if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
-            return;
+            return ProcessStatus::Stop;
         }
 
-        let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
+        let rule = Rule::crete_remove_exact_idx_rule(vec![id]);
+        let _ = execute_rule_and_extend_results(rule, stats, settings, mm);
     }
+    ProcessStatus::Continue
 }
 
 pub fn get_random_rule(content_size: usize) -> Rule {
