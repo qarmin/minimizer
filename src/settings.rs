@@ -117,8 +117,7 @@ pub struct Settings {
         short,
         long,
         value_name = "MAX_TIME_SECONDS",
-        help = "Max time in seconds that minimization can take(this time will be exceeded, because minimizer needs to finish current iteration)",
-        default_value_t = false
+        help = "Max time in seconds that minimization can take(this time will be exceeded, because minimizer needs to finish current iteration)"
     )]
     pub(crate) max_time: Option<u32>,
 

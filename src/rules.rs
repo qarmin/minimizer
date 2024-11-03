@@ -1,15 +1,27 @@
+use rand::distributions::{Distribution, WeightedIndex};
 use rand::{thread_rng, Rng};
 use strum_macros::EnumIter;
+
 use crate::common::check_if_is_broken;
 use crate::data_trait::DataTraits;
 use crate::settings::Settings;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(EnumIter, Copy, Clone)]
-pub enum RULE_TYPE {
+pub enum RuleType {
     RemoveFromStart,
     RemoveFromEnd,
     RemoveContinuousFromMiddle,
     RemoveRandom,
+}
+impl RuleType {
+    // Function will panic if not provided weights
+    // This is responsibility of caller to provide correct weights
+    pub fn get_random_type(weights: &[(RuleType, usize)]) -> RuleType {
+        let dist = WeightedIndex::new(weights.iter().map(|(_, weight)| *weight)).expect("Not provided weights");
+
+        weights[dist.sample(&mut thread_rng())].0
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -23,18 +35,13 @@ pub enum Rule {
     },
 }
 impl Rule {
-    pub fn create_start_end_rule(
-        content_size: usize,
-        number_of_checks: usize,
-        remove_from_start: bool,
-    ) -> Vec<Rule> {
+    pub fn create_start_end_rule(content_size: usize, number_of_checks: usize, remove_from_start: bool) -> Vec<Rule> {
         assert!(content_size >= 5);
 
         let mut chosen_indexes = if content_size < number_of_checks {
-            (1..content_size).into_iter().collect()
+            (1..content_size).collect()
         } else {
             (0..content_size)
-                .into_iter()
                 .map(|_| thread_rng().gen_range(1..content_size))
                 .collect::<Vec<_>>()
         };
@@ -77,11 +84,11 @@ impl Rule {
         if let Some(number_of_indexes) = number_of_indexes {
             assert!(number_of_indexes >= 2);
         }
-        let max_number_of_indexes = number_of_indexes.unwrap_or_else(|| ((content_size as f32).sqrt() as usize).clamp(2, 100));
+        let max_number_of_indexes =
+            number_of_indexes.unwrap_or_else(|| ((content_size as f32).sqrt() as usize).clamp(2, 100));
 
         let number_of_indexes = thread_rng().gen_range(2..max_number_of_indexes);
         let indexes_list = (1..(number_of_indexes.min(content_size - 1)))
-            .into_iter()
             .map(|_| thread_rng().gen_range(0..content_size))
             .collect();
         Rule::RemoveRandom {
@@ -121,7 +128,7 @@ impl Rule {
             })
             .collect()
     }
-    pub fn execute<T>(&self,content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
+    pub fn execute<T>(&self, content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
     where
         T: Clone,
     {
@@ -134,13 +141,18 @@ impl Rule {
                 content.get_mut_vec().drain(start_idx_included..end_idx_excluded);
             }
             Rule::RemoveRandom { indexes_to_remove } => {
-                content
-                    .get_mut_vec()
-                    .retain(|(idx, _)| !indexes_to_remove.contains(idx));
+                let new_vec = content
+                    .get_vec()
+                    .iter()
+                    .enumerate()
+                    .filter(|(idx, _)| !indexes_to_remove.contains(idx))
+                    .map(|(_, x)| x.clone())
+                    .collect();
+                *content.get_mut_vec() = new_vec;
             }
         }
 
-        let (is_broken, _output) = check_if_is_broken(&content, settings);
+        let (is_broken, _output) = check_if_is_broken(content, settings);
 
         if is_broken {
             *content.get_mut_vec() = initial_content;
@@ -149,5 +161,3 @@ impl Rule {
         is_broken
     }
 }
-
-

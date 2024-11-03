@@ -24,7 +24,10 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
     }
 }
 
-pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String) {
+pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String)
+where
+    T: Clone,
+{
     if let Err(e) = content.save_to_file(&get_temp_file()) {
         eprintln!("Error writing file {}, reason {}", &get_temp_file(), e);
         process::exit(1);
@@ -60,14 +63,6 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
         );
     }
 
-    // Also saves to output file, to be able to get results even if app will be stopped
-    if is_broken {
-        if let Err(e) = content.save_to_file(&settings.output_file) {
-            eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
-            process::exit(1);
-        }
-    }
-
     (is_broken, all)
 }
 
@@ -83,7 +78,6 @@ pub fn collect_output(output: &Output) -> String {
     );
     format!("{stdout_str}\n{stderr_str}\n\n{status_signal}")
 }
-
 
 pub fn load_and_check_files(settings: &Settings) -> Vec<u8> {
     if !Path::new(&settings.input_file).exists() {

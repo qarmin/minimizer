@@ -8,6 +8,7 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::settings::Settings;
+use crate::strategy::general::minimize_general;
 
 mod common;
 mod data_trait;
@@ -61,6 +62,7 @@ fn main() {
 
     let mb = MinimizationBytes {
         bytes: initial_file_content.clone(),
+        mode: Mode::Bytes,
     };
     let (is_initially_broken, initial_output) = check_if_is_broken(&mb, &settings);
 
@@ -88,17 +90,15 @@ fn main() {
 
     let mb = minimize_content(initial_file_content.clone(), &mut stats, &settings, &mut rng);
 
-    if !check_if_is_broken(&mb, &settings).0 {
-        if settings.is_normal_message_visible() {
-            eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
-            eprintln!("==================COMMAND=================");
-            eprintln!("{}", create_command(&settings));
-            eprintln!("==================OUTPUT==================");
-            eprintln!("{initial_output}");
-            eprintln!("==================CONTENT=================");
-            eprintln!("{}", String::from_utf8_lossy(&mb.bytes));
-            eprintln!("===========================================");
-        }
+    if !check_if_is_broken(&mb, &settings).0 && settings.is_normal_message_visible() {
+        eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
+        eprintln!("==================COMMAND=================");
+        eprintln!("{}", create_command(&settings));
+        eprintln!("==================OUTPUT==================");
+        eprintln!("{initial_output}");
+        eprintln!("==================CONTENT=================");
+        eprintln!("{}", String::from_utf8_lossy(&mb.bytes));
+        eprintln!("===========================================");
     }
 
     let bytes = mb.len();
@@ -139,32 +139,32 @@ fn minimize_content(
     let mut mb;
     if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
         let mut ms = MinimizationLines {
-            mode,
+            mode: Mode::Lines,
             lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
         };
         stats.max_attempts = settings.attempts / 3;
-        minimize_general_new(stats, settings, &mut ms, rng);
+        minimize_general(stats, settings, &mut ms, rng);
 
         let mut mc = MinimizationChars {
-            mode,
+            mode: Mode::Chars,
             chars: ms.lines.join("\n").chars().collect(),
         };
         stats.max_attempts = settings.attempts * 2 / 3;
-        minimize_general_new(stats, settings, &mut mc, rng);
+        minimize_general(stats, settings, &mut mc, rng);
 
         mb = MinimizationBytes {
-            mode,
+            mode: Mode::Bytes,
             bytes: mc.chars.iter().collect::<String>().as_bytes().to_vec(),
         };
     } else {
         mb = MinimizationBytes {
-            mode,
+            mode: Mode::Bytes,
             bytes: initial_file_content.clone(),
         };
     }
 
     stats.max_attempts = settings.attempts;
-    minimize_general_new(stats, settings, &mut mb, rng);
+    minimize_general(stats, settings, &mut mb, rng);
 
     mb
 }
