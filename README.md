@@ -33,7 +33,7 @@ echo "BDCE" >> input.txt
 ```
 running 
 ```
-minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 300 --broken-info "AB"
+minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 300 --broken-info "AB" -e -v
 ```
 will probably give you output.txt with content
 ```
@@ -54,10 +54,21 @@ Each mode(which works on Vec<> of lines, chars and bytes) at start, tries to rem
 
 Later in loop random elements from middle/start/end are removed to check if file still returns expected output.
 
+## Different strategies
+Basing on different files, different strategies can be used to minimize file.
+
+In repo only one general strategy is implemented, which should be good for most of the files.
+
+But if you have some specific file, you can implement your own strategy 
+
 ## Typical commands
 ### Ruff
 ```
 minimizer --input-file /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.py --output-file a.py --command "red_knot" --attempts 1000 --broken-info "RUST_BACKTRACE" -z "not yet implemented" -z "failed to parse" -z "SyntaxError" -z "Sorry:" -z "IndentationError" -k "python3 -m compileall {}" -r -v
+```
+or shorter
+```
+minimizer -i /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.py -o a.py -c "red_knot" -a 1000 -b "RUST_BACKTRACE" -z "not yet implemented" -z "failed to parse" -z "SyntaxError" -z "Sorry:" -z "IndentationError" -k "python3 -m compileall {}" -r -v
 ```
 
 ### Red Knot
@@ -65,8 +76,17 @@ minimizer --input-file /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.
 minimizer --input-file /home/rafal/Desktop/RunEveryCommand/C/PY_FILE_TEST_25518.py --output-file a.py --command "red_knot" --attempts 1000 --broken-info "RUST_BACKTRACE" -z "not yet implemented" -z "failed to parse" -z "SyntaxError" -z "Sorry:" -z "IndentationError" -k "python3 -m compileall {}" -r -v
 ```
 
+### Lofty
+```
+minimizer --input-file input.mp3 --output-file output.mp3 --command "lofty {}" --attempts 100000 -r --broken-info "RUST_BACKTRACE" -v --max-time 200 --strategy pedantic
+```
+or sho
+```
+minimizer -i input.mp3 -o output.mp3 -c "lofty {}" -a 100000 -r -b "RUST_BACKTRACE" -v -t 200 -s pedantic
+```
+
 ## Why
-I just needed this - I doubt that it will be useful for anyone else.
+I just needed this - I doubt that it will be useful for anyone else, but feel free to use this.
 
 ## License
 MIT License

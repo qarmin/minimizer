@@ -1,4 +1,4 @@
-name: 🐧 Minimizator build
+name: 🐧 Minimizer build
 on:
   push:
   pull_request:
@@ -7,16 +7,19 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ruff-normal-ci:
-
+  minimizer:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ruff
+      - name: Install
         run: |
           cargo install --path .
+
+      - name: Test
+        run: |
+          cargo test
 
       - name: Prepare files
         run: |
@@ -32,7 +35,7 @@ jobs:
       - name: Minimize files
         run: |
           cd test
-          minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 1000 --broken-info "QWER" -r -v
+          RUST_BACKTRACE=1 minimizer -i input.txt -o output.txt -c "cat {}" -a 1000 -b "QWER" -r -v
           cd ..
 
       - name: Test result
@@ -42,3 +45,21 @@ jobs:
           printf "QWER" > expected.txt
           diff output.txt expected.txt
 
+      - name: Minimize files pedantic
+        run: |
+          cd test
+          RUST_BACKTRACE=1 minimizer -i input.txt -o output.txt -c "cat {}" -a 1000 -b "QWER" -r -v -s pedantic
+          cd ..
+
+      - name: Test result
+        run: |
+          # Check if output.txt is equal to expected.txt
+          cd test
+          printf "QWER" > expected.txt
+          diff output.txt expected.txt
+
+      - name: Minimize files, hit timeout
+        run: |
+          cd test
+          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --additional-command "sleep 5" --attempts 1000 --broken-info "QWER" -r -v --max-time 10
+          cd ..

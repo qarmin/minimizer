@@ -1,5 +1,7 @@
 use clap::Parser;
 
+use crate::strategy::common::Strategies;
+
 thread_local! {
     pub static TEMP_FILE: String = format!("/tmp/minimizer_{}", std::process::id());
 }
@@ -11,7 +13,7 @@ pub fn get_temp_file() -> String {
 #[derive(Parser)]
 #[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
-#[command(version = "1.3.2")]
+#[command(version = "2.0.0")]
 #[command(
     about = "Minimize files",
     long_about = "App that minimizes files, to find the smallest possible file that have certain output."
@@ -96,14 +98,14 @@ pub struct Settings {
     )]
     verbose: bool,
 
-    // #[arg(
-    //     short="vv",
-    //     long,
-    //     value_name = "EXTRA_VERBOSE",
-    //     help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
-    //     default_value_t = false
-    // )]
-    // extra_verbose: bool,
+    #[arg(
+        short = 'e',
+        long,
+        value_name = "EXTRA_VERBOSE",
+        help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
+        default_value_t = false
+    )]
+    extra_verbose: bool,
     #[arg(
         short,
         long,
@@ -114,12 +116,37 @@ pub struct Settings {
     pub(crate) print_command_output: bool,
 
     #[arg(
+        short = 't',
+        long,
+        value_name = "MAX_TIME_SECONDS",
+        help = "Max time in seconds that minimization can take(this time will be exceeded, because minimizer needs to finish current iteration)"
+    )]
+    pub(crate) max_time: Option<u32>,
+
+    #[arg(
         short = 'k',
         long,
         value_name = "ADDITIONAL_COMMAND",
         help = "Runs additional command, e.g. \"ruff {}\" can be command and \"python3 -m compileall {}\" additional command to verify that output file is valid(in any sense of this word)"
     )]
     pub(crate) additional_command: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        default_value = "general",
+        value_parser = parse_strategy,
+        help = "Strategy used to minimize files(General or Pedantic)",
+    )]
+    pub strategy: Strategies,
+}
+
+fn parse_strategy(input: &str) -> Result<Strategies, String> {
+    match input.to_lowercase().as_str() {
+        "general" => Ok(Strategies::General),
+        "pedantic" => Ok(Strategies::Pedantic),
+        missing => Err(format!("Unknown strategy: {}", missing)),
+    }
 }
 
 impl Settings {
@@ -129,10 +156,19 @@ impl Settings {
     pub fn is_verbose_message_visible(&self) -> bool {
         !self.quiet && self.verbose
     }
-    // pub fn is_verbose_message_visible(&self) -> bool {
-    //     !self.quiet && (self.verbose || self.extra_verbose)
-    // }
-    // pub fn is_extra_verbose_message_visible(&self) -> bool {
-    //     !self.quiet && self.extra_verbose
-    // }
+    pub fn is_extra_verbose_message_visible(&self) -> bool {
+        !self.quiet && self.extra_verbose
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use crate::settings::Settings;
+
+    #[test]
+    fn verify_cli() {
+        Settings::command().debug_assert();
+    }
 }

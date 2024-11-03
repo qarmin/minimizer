@@ -1,12 +1,10 @@
+use std::os::unix::prelude::ExitStatusExt;
+use std::path::Path;
+use std::process::{Output, Stdio};
+use std::{fs, process};
+
 use crate::data_trait::DataTraits;
 use crate::settings::{get_temp_file, Settings};
-use crate::Stats;
-use rand::prelude::ThreadRng;
-use rand::Rng;
-use std::cmp::{max, min};
-use std::os::unix::prelude::ExitStatusExt;
-use std::process;
-use std::process::{Output, Stdio};
 
 pub fn create_command(settings: &Settings) -> String {
     let base_command = create_single_command_str(settings, &get_temp_file(), &settings.command);
@@ -26,7 +24,10 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
     }
 }
 
-pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String) {
+pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String)
+where
+    T: Clone,
+{
     if let Err(e) = content.save_to_file(&get_temp_file()) {
         eprintln!("Error writing file {}, reason {}", &get_temp_file(), e);
         process::exit(1);
@@ -62,14 +63,6 @@ pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -
         );
     }
 
-    // Also saves to output file, to be able to get results even if app will be stopped
-    if is_broken {
-        if let Err(e) = content.save_to_file(&settings.output_file) {
-            eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
-            process::exit(1);
-        }
-    }
-
     (is_broken, all)
 }
 
@@ -86,97 +79,30 @@ pub fn collect_output(output: &Output) -> String {
     format!("{stdout_str}\n{stderr_str}\n\n{status_signal}")
 }
 
-// Prepares indexes in group of 2
-// Indexes are sorted and second value is always greater than first
-// Indexes are unique
-// Indexes are sorted by difference between them - at start we are checking if we can remove big chunk which should be more effective
-pub fn prepare_double_indexes_to_remove<T>(
-    content: &[T],
-    thread_rng: &mut ThreadRng,
-    max_iterations: usize,
-    stats: &Stats,
-) -> Vec<(usize, usize)> {
-    let iterations = get_number_of_iterations(stats, max_iterations, content);
+pub fn load_and_check_files(settings: &Settings) -> Vec<u8> {
+    if !Path::new(&settings.input_file).exists() {
+        eprintln!("File {} does not exists", &settings.input_file);
+        process::exit(1);
+    }
+    let content = match fs::read(&settings.input_file) {
+        Ok(content) => content,
+        Err(e) => {
+            eprintln!("Error reading file {}, reason {}", &settings.input_file, e);
+            process::exit(1);
+        }
+    };
 
-    let mut chosen_indexes;
-    loop {
-        chosen_indexes = (0..iterations)
-            .map(|_| {
-                (
-                    thread_rng.gen_range(0..content.len()),
-                    thread_rng.gen_range(0..content.len()),
-                )
-            })
-            .map(|(a, b)| if a > b { (b, a) } else { (a, b) })
-            .filter(|(a, b)| a != b)
-            .collect::<Vec<_>>();
-        if !chosen_indexes.is_empty() {
-            break;
+    for file in [get_temp_file(), settings.output_file.clone()] {
+        if let Err(e) = fs::write(&file, &content) {
+            eprintln!("Error writing file {}, reason {}", &file, e);
+            process::exit(1);
+        }
+
+        if let Err(e) = fs::remove_file(&file) {
+            eprintln!("Error removing file {}, reason {}", &file, e);
+            process::exit(1);
         }
     }
 
-    chosen_indexes.sort_by(|(a1, b1), (a2, b2)| (b2 - a2).cmp(&(b1 - a1)));
-    chosen_indexes.dedup();
-    assert!(!chosen_indexes.is_empty());
-    chosen_indexes
-}
-
-pub fn prepare_indexes_to_remove<T>(
-    content: &[T],
-    thread_rng: &mut ThreadRng,
-    max_iterations: usize,
-    stats: &Stats,
-    from_start: bool,
-) -> Vec<usize> {
-    let start_idx = if from_start { 1 } else { 0 };
-    let end_idx = if from_start { content.len() } else { content.len() - 1 };
-    let iterations = get_number_of_iterations(stats, max_iterations, content);
-
-    let mut chosen_indexes: Vec<_> = (0..iterations)
-        .map(|_| thread_rng.gen_range(start_idx..end_idx))
-        .collect();
-    chosen_indexes.sort_unstable();
-    chosen_indexes.dedup();
-    if from_start {
-        chosen_indexes.reverse();
-    }
-
-    assert!(!chosen_indexes.is_empty());
-    chosen_indexes
-}
-
-pub fn prepare_random_indexes_to_remove<T>(
-    content: &[T],
-    thread_rng: &mut ThreadRng,
-    max_iterations: usize,
-    stats: &Stats,
-) -> Vec<Vec<usize>> {
-    let iterations = get_number_of_iterations(stats, max_iterations, content);
-    let mut chosen_indexes = vec![];
-
-    for _ in 0..iterations {
-        let mut current_indexes = vec![];
-        for _ in 0..=thread_rng.gen_range(1..=iterations) {
-            current_indexes.push(thread_rng.gen_range(0..content.len()));
-        }
-        current_indexes.sort_unstable();
-        current_indexes.dedup();
-        chosen_indexes.push(current_indexes);
-    }
-
-    chosen_indexes.sort_unstable();
-    chosen_indexes.dedup();
-    assert!(!chosen_indexes.is_empty());
-    chosen_indexes
-}
-
-fn get_number_of_iterations<T>(stats: &Stats, max_iterations: usize, content: &[T]) -> usize {
-    let max_available_iterations = (stats.max_attempts - stats.current_iteration_count) as usize;
-    max(
-        min(
-            min(max_iterations, (content.len() as f32).sqrt() as usize),
-            max_available_iterations,
-        ),
-        1,
-    )
+    content
 }
