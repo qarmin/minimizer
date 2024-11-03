@@ -1,8 +1,16 @@
 use rand::{thread_rng, Rng};
-
+use strum_macros::EnumIter;
 use crate::common::check_if_is_broken;
 use crate::data_trait::DataTraits;
 use crate::settings::Settings;
+
+#[derive(EnumIter, Copy, Clone)]
+pub enum RULE_TYPE {
+    RemoveFromStart,
+    RemoveFromEnd,
+    RemoveContinuousFromMiddle,
+    RemoveRandom,
+}
 
 #[derive(Clone, Debug)]
 pub enum Rule {

@@ -8,7 +8,6 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::settings::Settings;
-use crate::strategy::minimize_general_new;
 
 mod common;
 mod data_trait;
@@ -140,28 +139,32 @@ fn minimize_content(
     let mut mb;
     if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
         let mut ms = MinimizationLines {
+            mode,
             lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
         };
         stats.max_attempts = settings.attempts / 3;
-        minimize_general_new(stats, settings, &mut ms, Mode::Lines, rng);
+        minimize_general_new(stats, settings, &mut ms, rng);
 
         let mut mc = MinimizationChars {
+            mode,
             chars: ms.lines.join("\n").chars().collect(),
         };
         stats.max_attempts = settings.attempts * 2 / 3;
-        minimize_general_new(stats, settings, &mut mc, Mode::Chars, rng);
+        minimize_general_new(stats, settings, &mut mc, rng);
 
         mb = MinimizationBytes {
+            mode,
             bytes: mc.chars.iter().collect::<String>().as_bytes().to_vec(),
         };
     } else {
         mb = MinimizationBytes {
+            mode,
             bytes: initial_file_content.clone(),
         };
     }
 
     stats.max_attempts = settings.attempts;
-    minimize_general_new(stats, settings, &mut mb, Mode::Bytes, rng);
+    minimize_general_new(stats, settings, &mut mb, rng);
 
     mb
 }
