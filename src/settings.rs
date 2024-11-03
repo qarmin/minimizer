@@ -114,6 +114,15 @@ pub struct Settings {
     pub(crate) print_command_output: bool,
 
     #[arg(
+        short,
+        long,
+        value_name = "MAX_TIME_SECONDS",
+        help = "Max time in seconds that minimization can take(this time will be exceeded, because minimizer needs to finish current iteration)",
+        default_value_t = false
+    )]
+    pub(crate) max_time: Option<u32>,
+
+    #[arg(
         short = 'k',
         long,
         value_name = "ADDITIONAL_COMMAND",
@@ -135,4 +144,16 @@ impl Settings {
     // pub fn is_extra_verbose_message_visible(&self) -> bool {
     //     !self.quiet && self.extra_verbose
     // }
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use crate::settings::Settings;
+
+    #[test]
+    fn verify_cli() {
+        Settings::command().debug_assert();
+    }
 }

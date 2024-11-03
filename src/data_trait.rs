@@ -1,7 +1,8 @@
 use std::fs;
+
 use strum_macros::Display;
 
-pub trait DataTraits<T> {
+pub trait DataTraits<T: Clone> {
     fn save_to_file(&self, file_name: &str) -> Result<(), std::io::Error>;
     fn get_mut_vec(&mut self) -> &mut Vec<T>;
     fn get_vec(&self) -> &Vec<T>;

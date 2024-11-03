@@ -1,4 +1,4 @@
-name: 🐧 Minimizator build
+name: 🐧 Minimizer build
 on:
   push:
   pull_request:
@@ -7,16 +7,19 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ruff-normal-ci:
-
+  minimizer:
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ruff
+      - name: Install
         run: |
           cargo install --path .
+
+      - name: Test
+        run: |
+          cargo test
 
       - name: Prepare files
         run: |
