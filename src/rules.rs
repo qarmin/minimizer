@@ -192,7 +192,6 @@ impl Rule {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,7 +217,7 @@ mod tests {
         let number_of_checks = 100;
         let remove_from_start = true;
         let rules = Rule::create_start_end_rule(content_size, number_of_checks, remove_from_start);
-        assert!(rules.len() > 0); // We can't predict exact number of checks due deduplication, but it should be more than 0
+        assert!(!rules.is_empty()); // We can't predict exact number of checks due deduplication, but it should be more than 0
         for rule in rules {
             match rule {
                 Rule::RemoveContinuous {
@@ -235,7 +234,7 @@ mod tests {
 
         let remove_from_start = false;
         let rules = Rule::create_start_end_rule(content_size, number_of_checks, remove_from_start);
-        assert!(rules.len() > 0); // We can't predict exact number of checks due deduplication, but it should be more than 0
+        assert!(!rules.is_empty()); // We can't predict exact number of checks due deduplication, but it should be more than 0
         for rule in rules {
             match rule {
                 Rule::RemoveContinuous {
@@ -277,7 +276,7 @@ mod tests {
             let rule = Rule::create_random_rule(content_size, None);
             match rule {
                 Rule::RemoveRandom { indexes_to_remove } => {
-                    assert!(indexes_to_remove.len() > 0);
+                    assert!(!indexes_to_remove.is_empty());
                     for idx in &indexes_to_remove {
                         assert!(*idx < content_size);
                     }

@@ -1,5 +1,7 @@
 use clap::Parser;
 
+use crate::strategy::common::Strategies;
+
 thread_local! {
     pub static TEMP_FILE: String = format!("/tmp/minimizer_{}", std::process::id());
 }
@@ -128,6 +130,23 @@ pub struct Settings {
         help = "Runs additional command, e.g. \"ruff {}\" can be command and \"python3 -m compileall {}\" additional command to verify that output file is valid(in any sense of this word)"
     )]
     pub(crate) additional_command: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        default_value = "general",
+        value_parser = parse_strategy,
+        help = "Strategy used to minimize files(General or Pedantic)",
+    )]
+    pub strategy: Strategies,
+}
+
+fn parse_strategy(input: &str) -> Result<Strategies, String> {
+    match input.to_lowercase().as_str() {
+        "general" => Ok(Strategies::General),
+        "pedantic" => Ok(Strategies::Pedantic),
+        missing => Err(format!("Unknown strategy: {}", missing)),
+    }
 }
 
 impl Settings {

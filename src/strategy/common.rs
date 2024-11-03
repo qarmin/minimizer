@@ -1,17 +1,24 @@
+use std::process;
+
+use rand::prelude::ThreadRng;
+
 use crate::data_trait::{DataTraits, Mode};
 use crate::rules::Rule;
 use crate::settings::Settings;
 use crate::{Stats, START_TIME};
-use rand::prelude::ThreadRng;
-use std::process;
 
-
-pub trait Strategy<T> where
-    T: Clone {
-    fn minimize(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
-
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+pub enum Strategies {
+    General,
+    Pedantic,
 }
 
+pub trait Strategy<T>
+where
+    T: Clone,
+{
+    fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
+}
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub enum ProcessStatus {

@@ -3,19 +3,27 @@ use rand::prelude::ThreadRng;
 use crate::data_trait::DataTraits;
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
-use crate::strategy::common::{check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken, ProcessStatus, Strategy};
+use crate::strategy::common::{
+    check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken,
+    ProcessStatus, Strategy,
+};
 use crate::Stats;
-
 
 pub struct GeneralStrategy<T> {
     _phantom: std::marker::PhantomData<T>,
 }
-
-impl<T> Strategy<T> for GeneralStrategy<T> where
-    T: Clone {
-    fn minimize(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng)
-
-    {
+impl<T> GeneralStrategy<T> {
+    pub(crate) fn new() -> Self {
+        GeneralStrategy {
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+impl<T> Strategy<T> for GeneralStrategy<T>
+where
+    T: Clone,
+{
+    fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng) {
         minimize_general_internal(stats, settings, mm, rng);
 
         // After minimization to less than 5 elements, we try to remove all combinations of 2, 3, 4 elements
@@ -25,7 +33,6 @@ impl<T> Strategy<T> for GeneralStrategy<T> where
             let _ = execute_rules_until_first_found_broken(all_combination_rules, stats, settings, mm, false);
         }
     }
-
 }
 
 fn minimize_general_internal<T>(

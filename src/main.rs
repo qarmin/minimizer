@@ -8,8 +8,8 @@ use rand::prelude::ThreadRng;
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
 use crate::settings::Settings;
-use crate::strategy::common::Strategy;
-use crate::strategy::general::{GeneralStrategy};
+use crate::strategy::common::{Strategies, Strategy};
+use crate::strategy::general::GeneralStrategy;
 
 mod common;
 mod data_trait;
@@ -144,14 +144,14 @@ fn minimize_content(
             lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
         };
         stats.max_attempts = settings.attempts / 3;
-        GeneralStrategy::minimize(stats, settings, &mut ms, rng);
+        get_strategy(settings).minimize(stats, settings, &mut ms, rng);
 
         let mut mc = MinimizationChars {
             mode: Mode::Chars,
             chars: ms.lines.join("\n").chars().collect(),
         };
         stats.max_attempts = settings.attempts * 2 / 3;
-        GeneralStrategy::minimize(stats, settings, &mut mc, rng);
+        get_strategy(settings).minimize(stats, settings, &mut mc, rng);
 
         mb = MinimizationBytes {
             mode: Mode::Bytes,
@@ -165,7 +165,14 @@ fn minimize_content(
     }
 
     stats.max_attempts = settings.attempts;
-    GeneralStrategy::minimize(stats, settings, &mut mb, rng);
+    get_strategy(settings).minimize(stats, settings, &mut mb, rng);
 
     mb
+}
+
+pub fn get_strategy<T: Clone + 'static>(settings: &Settings) -> Box<dyn Strategy<T>> {
+    match settings.strategy {
+        Strategies::General => Box::new(GeneralStrategy::<T>::new()),
+        Strategies::Pedantic => panic!("Pedantic strategy is not implemented yet"),
+    }
 }
