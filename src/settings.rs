@@ -11,7 +11,7 @@ pub fn get_temp_file() -> String {
 #[derive(Parser)]
 #[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
-#[command(version = "1.3.2")]
+#[command(version = "2.0.0")]
 #[command(
     about = "Minimize files",
     long_about = "App that minimizes files, to find the smallest possible file that have certain output."
@@ -96,14 +96,14 @@ pub struct Settings {
     )]
     verbose: bool,
 
-    // #[arg(
-    //     short="vv",
-    //     long,
-    //     value_name = "EXTRA_VERBOSE",
-    //     help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
-    //     default_value_t = false
-    // )]
-    // extra_verbose: bool,
+    #[arg(
+        short = 'e',
+        long,
+        value_name = "EXTRA_VERBOSE",
+        help = "Prints command output when file is minimized, this may be useful, but will slow down minimization",
+        default_value_t = false
+    )]
+    extra_verbose: bool,
     #[arg(
         short,
         long,
@@ -137,12 +137,9 @@ impl Settings {
     pub fn is_verbose_message_visible(&self) -> bool {
         !self.quiet && self.verbose
     }
-    // pub fn is_verbose_message_visible(&self) -> bool {
-    //     !self.quiet && (self.verbose || self.extra_verbose)
-    // }
-    // pub fn is_extra_verbose_message_visible(&self) -> bool {
-    //     !self.quiet && self.extra_verbose
-    // }
+    pub fn is_extra_verbose_message_visible(&self) -> bool {
+        !self.quiet && self.extra_verbose
+    }
 }
 
 #[cfg(test)]

@@ -35,7 +35,7 @@ jobs:
       - name: Minimize files
         run: |
           cd test
-          minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 1000 --broken-info "QWER" -r -v
+          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --attempts 1000 --broken-info "QWER" -r -v
           cd ..
 
       - name: Test result

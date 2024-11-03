@@ -88,7 +88,6 @@ where
         if check_if_stopping_minimization(stats, settings, mm, check_length) == ProcessStatus::Stop {
             return ProcessStatus::Stop;
         }
-
         if execute_rule_and_extend_results(rule, stats, settings, mm) {
             return ProcessStatus::Continue;
         }
@@ -107,7 +106,7 @@ where
     T: Clone,
 {
     let old_len = mm.len();
-    let is_broken = rule.execute(mm, settings);
+    let is_broken = rule.execute(stats, mm, settings);
     extend_results(is_broken, 1, old_len, mm.len(), stats, mm.get_mode(), settings);
 
     // Also saves current minimal output to file, to be able to get results even if app will be stopped by user in the middle of minimization

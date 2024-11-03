@@ -26,6 +26,10 @@ fn minimize_general_internal<T>(
     const REMOVE_FROM_END_ITERS: usize = 35;
 
     for (iters, from_start) in [(REMOVE_FROM_START_ITERS, true), (REMOVE_FROM_END_ITERS, false)] {
+        if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
+            return;
+        }
+
         let from_end_rules = Rule::create_start_end_rule(mm.len(), iters, from_start);
         if execute_rules_until_first_found_broken(from_end_rules, stats, settings, mm, true) == ProcessStatus::Stop {
             return;
