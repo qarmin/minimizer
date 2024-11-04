@@ -99,7 +99,16 @@ fn main() {
         eprintln!("==================OUTPUT==================");
         eprintln!("{initial_output}");
         eprintln!("==================CONTENT=================");
-        eprintln!("{}", String::from_utf8_lossy(&mb.bytes));
+        let initial_str_content = String::from_utf8(initial_file_content.clone());
+        if let Ok(initial_str_content) = initial_str_content {
+            if initial_str_content.len() < 4096 {
+                eprintln!("{}", initial_str_content);
+            } else {
+                eprintln!("Content is too long to display");
+            }
+        } else {
+            eprintln!("File is not valid utf8 string");
+        }
         eprintln!("===========================================");
     }
 

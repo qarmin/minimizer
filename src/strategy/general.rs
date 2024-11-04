@@ -52,8 +52,11 @@ where
             return;
         }
 
-        let from_end_rules = Rule::create_start_end_rule(mm.len(), iters, from_start);
-        if execute_rules_until_first_found_broken(from_end_rules, stats, settings, mm, true) == ProcessStatus::Stop {
+        let from_start_end_rules = Rule::create_start_end_rule(mm.len(), iters, from_start);
+
+        if execute_rules_until_first_found_broken(from_start_end_rules, stats, settings, mm, true)
+            == ProcessStatus::Stop
+        {
             return;
         };
     }

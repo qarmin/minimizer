@@ -13,7 +13,7 @@ pub fn get_temp_file() -> String {
 #[derive(Parser)]
 #[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
-#[command(version = "2.0.0")]
+#[command(version = "2.0.1")]
 #[command(
     about = "Minimize files",
     long_about = "App that minimizes files, to find the smallest possible file that have certain output."

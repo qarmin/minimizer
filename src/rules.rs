@@ -10,7 +10,7 @@ use crate::settings::Settings;
 use crate::Stats;
 
 #[allow(clippy::enum_variant_names)]
-#[derive(EnumIter, Copy, Clone)]
+#[derive(EnumIter, Copy, Clone, Debug)]
 pub enum RuleType {
     RemoveFromStart,
     RemoveFromEnd,
@@ -62,7 +62,7 @@ impl Rule {
             (1..content_size).collect()
         } else {
             // When number of requested checks is smaller than content size, we will collect random ranges
-            (0..content_size)
+            (0..number_of_checks)
                 .map(|_| thread_rng().gen_range(1..content_size))
                 .collect::<Vec<_>>()
         };
@@ -70,6 +70,7 @@ impl Rule {
         chosen_indexes.dedup();
 
         if remove_from_start {
+            chosen_indexes.reverse();
             chosen_indexes
                 .into_iter()
                 .map(|remove_to_idx| Rule::RemoveContinuous {
@@ -78,7 +79,6 @@ impl Rule {
                 })
                 .collect()
         } else {
-            chosen_indexes.reverse();
             chosen_indexes
                 .into_iter()
                 .map(|remove_from_idx| Rule::RemoveContinuous {
@@ -223,6 +223,8 @@ mod tests {
         let remove_from_start = true;
         let rules = Rule::create_start_end_rule(content_size, number_of_checks, remove_from_start);
         assert!(!rules.is_empty()); // We can't predict exact number of checks due deduplication, but it should be more than 0
+
+        let mut previous_diff = usize::MAX;
         for rule in rules {
             match rule {
                 Rule::RemoveContinuous {
@@ -232,6 +234,11 @@ mod tests {
                     assert!(start_idx_included < end_idx_excluded);
                     assert_eq!(start_idx_included, 0);
                     assert!(end_idx_excluded < content_size);
+
+                    // We start checking from the biggest range, to get at start the biggest minimization
+                    let diff = end_idx_excluded - start_idx_included;
+                    assert!(diff < previous_diff);
+                    previous_diff = diff;
                 }
                 _ => unreachable!(),
             }
@@ -240,6 +247,8 @@ mod tests {
         let remove_from_start = false;
         let rules = Rule::create_start_end_rule(content_size, number_of_checks, remove_from_start);
         assert!(!rules.is_empty()); // We can't predict exact number of checks due deduplication, but it should be more than 0
+
+        let mut previous_diff = usize::MAX;
         for rule in rules {
             match rule {
                 Rule::RemoveContinuous {
@@ -249,6 +258,11 @@ mod tests {
                     assert!(start_idx_included < end_idx_excluded);
                     assert!(start_idx_included > 0);
                     assert_eq!(end_idx_excluded, content_size);
+
+                    // We start checking from the biggest range, to get at start the biggest minimization
+                    let diff = end_idx_excluded - start_idx_included;
+                    assert!(diff < previous_diff);
+                    previous_diff = diff;
                 }
                 _ => unreachable!(),
             }
