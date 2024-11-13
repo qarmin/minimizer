@@ -1,9 +1,12 @@
 use clap::Parser;
+use once_cell::sync::OnceCell;
 
 use crate::strategy::common::Strategies;
 
+pub static EXTENSION: OnceCell<String> = OnceCell::new();
+
 thread_local! {
-    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}", std::process::id());
+    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}{}", std::process::id(), EXTENSION.get().expect("Extension not set, but should be set"));
 }
 
 pub fn get_temp_file() -> String {
@@ -13,7 +16,7 @@ pub fn get_temp_file() -> String {
 #[derive(Parser)]
 #[command(name = "minimizer")]
 #[command(author = "Rafał Mikrut")]
-#[command(version = "2.0.1")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(
     about = "Minimize files",
     long_about = "App that minimizes files, to find the smallest possible file that have certain output."

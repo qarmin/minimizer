@@ -7,7 +7,7 @@ use rand::prelude::ThreadRng;
 
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
-use crate::settings::Settings;
+use crate::settings::{Settings, EXTENSION};
 use crate::strategy::common::{Strategies, Strategy};
 use crate::strategy::general::GeneralStrategy;
 use crate::strategy::pedantic::PedanticStrategy;
@@ -46,6 +46,15 @@ fn main() {
     let _ = *START_TIME; // To initialize lazy static
 
     let mut settings = Settings::parse();
+    let extension = settings.input_file.split('.').last().unwrap_or("");
+    let extension_with_dot = if extension.is_empty() {
+        extension.to_string()
+    } else {
+        format!(".{}", extension)
+    };
+    EXTENSION
+        .set(extension_with_dot)
+        .expect("Extension set twice, which should not happen");
     settings.command = settings.command.replace("\"", "'");
 
     let start_time = Instant::now();

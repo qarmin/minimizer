@@ -1,6 +1,6 @@
 [package]
 name = "minimizer"
-version = "2.0.1"
+version = "2.0.2"
 edition = "2021"
 authors = ["Rafał Mikrut"]
 description = "Minimize files to find minimal test case"
