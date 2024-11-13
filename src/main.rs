@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Instant;
 use std::{fs, process};
 
@@ -46,7 +47,11 @@ fn main() {
     let _ = *START_TIME; // To initialize lazy static
 
     let mut settings = Settings::parse();
-    let extension = settings.input_file.split('.').last().unwrap_or("");
+    let extension = Path::new(&settings.input_file)
+        .extension()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default();
     let extension_with_dot = if extension.is_empty() {
         extension.to_string()
     } else {

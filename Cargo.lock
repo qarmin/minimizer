@@ -140,7 +140,7 @@ checksum = "18d287de67fe55fd7e1581fe933d965a5a9477b38e949cfa9f8574ef01506398"
 
 [[package]]
 name = "minimizer"
-version = "2.0.2"
+version = "2.0.3"
 dependencies = [
  "clap",
  "once_cell",
