@@ -10,6 +10,7 @@ jobs:
   minimizer:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         strategy: [general, pedantic, general_multi]
     steps:
@@ -36,9 +37,7 @@ jobs:
 
       - name: Minimize files
         run: |
-          cd test
-          RUST_BACKTRACE=1 minimizer -i input.txt -o output.txt -c "cat {}" -a 1000 -b "QWER" -r -v -s ${{ matrix.strategy }}
-          cd ..
+          RUST_BACKTRACE=1 minimizer -i test/input.txt -o test/output.txt -c "cat {}" -a 1000 -b "QWER" -r -v -s ${{ matrix.strategy }}
 
       - name: Test result
         run: |

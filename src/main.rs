@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 use std::{fs, process};
-
+use std::fmt::Debug;
 use clap::Parser;
 use once_cell::sync::Lazy;
 use rand::prelude::ThreadRng;
@@ -195,7 +195,7 @@ fn minimize_content(
     mb
 }
 
-pub fn get_strategy<T: Clone + 'static + SaveSliceToFile + Send + Sync>(settings: &Settings) -> Box<dyn Strategy<T>> {
+pub fn get_strategy<T: Clone + 'static + SaveSliceToFile + Send + Sync + Debug>(settings: &Settings) -> Box<dyn Strategy<T>> {
     match settings.strategy {
         Strategies::General => Box::new(GeneralStrategy::<T>::new()),
         Strategies::Pedantic => Box::new(PedanticStrategy::<T>::new()),

@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::process;
 
 use rand::prelude::ThreadRng;
@@ -16,7 +17,7 @@ pub enum Strategies {
 
 pub trait Strategy<T>
 where
-    T: Clone + SaveSliceToFile + Send + Sync,
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
 }
@@ -99,7 +100,7 @@ pub(crate) fn execute_rules_until_first_found_broken<T>(
     check_length: bool,
 ) -> ProcessStatus
 where
-    T: Clone + SaveSliceToFile + Send + Sync,
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     for rule in rules {
         if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
@@ -120,7 +121,7 @@ pub(crate) fn execute_rule_and_extend_results<T>(
     mm: &mut dyn DataTraits<T>,
 ) -> bool
 where
-    T: Clone + SaveSliceToFile + Send + Sync,
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     let old_len = mm.len();
     let new_mm = rule.execute(stats, mm.get_vec(), mm.get_mode(), settings);

@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::{thread_rng, Rng};
@@ -155,7 +155,7 @@ impl Rule {
     }
     pub fn execute<T>(&self, stats: &Stats, content: &[T], mode: Mode, settings: &Settings) -> Option<Vec<T>>
     where
-        T: Clone + SaveSliceToFile + Send + Sync,
+        T: Clone + SaveSliceToFile + Send + Sync + Debug,
     {
         assert!(!content.is_empty());
         if settings.is_extra_verbose_message_visible() {

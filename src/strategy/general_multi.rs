@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
@@ -28,7 +29,7 @@ impl<T> GeneralMultiStrategy<T> {
 }
 impl<T> Strategy<T> for GeneralMultiStrategy<T>
 where
-    T: Clone + SaveSliceToFile + Send + Sync
+    T: Clone + SaveSliceToFile + Send + Sync + Debug
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng) {
         minimize_internal(stats, settings, mm, rng);
@@ -50,13 +51,18 @@ pub(crate) fn execute_multi_rules_until_first_found_broken<T>(
     check_length: bool,
 ) -> ProcessStatus
 where
-    T: Clone + SaveSliceToFile + Send + Sync
+    T: Clone + SaveSliceToFile + Send + Sync + Debug
 {
+    if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
+        return ProcessStatus::Stop;
+    }
+    dbg!(mm.len(), rules.len());
+
     let available_stats = stats.available();
     let stopped = AtomicBool::new(false);
-    let test_vec = mm.get_vec().clone();
-    let mode = mm.get_mode();
+    let test_vec = mm.get_vec();
     let old_len = mm.len();
+    let mode = mm.get_mode();
 
     let results = rules.into_par_iter().take(available_stats as usize).map(|rule|
         {
@@ -70,8 +76,12 @@ where
         }).while_some().collect::<Vec<_>>();
 
 
+    dbg!(&stopped.load(std::sync::atomic::Ordering::Relaxed));
+    dbg!(&results);
     let smallest_content = results.iter().flatten().min_by_key(|x| x.len());
     if let Some(smallest_content) = smallest_content {
+        dbg!(smallest_content.len());
+        dbg!(smallest_content);
         mm.replace_vec(smallest_content.clone());
     }
     extend_results(smallest_content.is_some(), results.len() as u32, old_len, mm.len(), stats, mm.get_mode(), settings);
@@ -85,7 +95,7 @@ where
 
 fn minimize_internal<T>(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, _rng: &mut ThreadRng)
 where
-    T: Clone + SaveSliceToFile + Send + Sync
+    T: Clone + SaveSliceToFile + Send + Sync + Debug
 {
     const REMOVE_FROM_START_ITERS: usize = 5;
     const REMOVE_FROM_END_ITERS: usize = 35;
