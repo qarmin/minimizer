@@ -1,6 +1,6 @@
 use rand::prelude::ThreadRng;
 
-use crate::data_trait::DataTraits;
+use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
 use crate::strategy::common::{
@@ -27,7 +27,7 @@ impl<T> PedanticStrategy<T> {
 }
 impl<T> Strategy<T> for PedanticStrategy<T>
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng) {
         minimize_internal(stats, settings, mm, rng);
@@ -43,13 +43,13 @@ where
 
 fn minimize_internal<T>(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, _rng: &mut ThreadRng)
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
     const REMOVE_FROM_START_ITERS: usize = 5;
     const REMOVE_FROM_END_ITERS: usize = 20;
 
     for (iters, from_start) in [(REMOVE_FROM_START_ITERS, true), (REMOVE_FROM_END_ITERS, false)] {
-        if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
+        if check_if_stopping_minimization(stats, settings, mm.get_vec(), true) == ProcessStatus::Stop {
             return;
         }
 
@@ -73,7 +73,7 @@ where
             minimized_smaller_than = true;
             minimize_smaller_than(stats, settings, mm);
         } else {
-            if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
+            if check_if_stopping_minimization(stats, settings, mm.get_vec(), true) == ProcessStatus::Stop {
                 return;
             }
             let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
@@ -81,13 +81,13 @@ where
     }
 }
 
-pub fn minimize_smaller_than<T: Clone>(
+pub fn minimize_smaller_than<T: Clone + SaveSliceToFile>(
     stats: &mut Stats,
     settings: &Settings,
     mm: &mut dyn DataTraits<T>,
 ) -> ProcessStatus {
     for id in (0..mm.len()).rev() {
-        if check_if_stopping_minimization(stats, settings, mm, true) == ProcessStatus::Stop {
+        if check_if_stopping_minimization(stats, settings, mm.get_vec(), true) == ProcessStatus::Stop {
             return ProcessStatus::Stop;
         }
 

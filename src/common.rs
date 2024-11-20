@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::{Output, Stdio};
 use std::{fs, process};
 
-use crate::data_trait::DataTraits;
+use crate::data_trait::{SaveSliceToFile};
 use crate::settings::{get_temp_file, Settings};
 
 pub fn create_command(settings: &Settings) -> String {
@@ -24,11 +24,11 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
     }
 }
 
-pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String)
+pub fn check_if_is_broken<T>(content: &[T], settings: &Settings) -> (bool, String)
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
-    if let Err(e) = content.save_to_file(&get_temp_file()) {
+    if let Err(e) = T::save_slice_to_file(content, &get_temp_file()) {
         eprintln!("Error writing file {}, reason {}", &get_temp_file(), e);
         process::exit(1);
     }

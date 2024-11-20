@@ -148,6 +148,7 @@ fn parse_strategy(input: &str) -> Result<Strategies, String> {
     match input.to_lowercase().as_str() {
         "general" => Ok(Strategies::General),
         "pedantic" => Ok(Strategies::Pedantic),
+        "general_multi" => Ok(Strategies::GeneralMulti),
         missing => Err(format!("Unknown strategy: {}", missing)),
     }
 }

@@ -2,7 +2,7 @@ use std::process;
 
 use rand::prelude::ThreadRng;
 
-use crate::data_trait::{DataTraits, Mode};
+use crate::data_trait::{DataTraits, Mode, SaveSliceToFile};
 use crate::rules::Rule;
 use crate::settings::Settings;
 use crate::{Stats, START_TIME};
@@ -11,11 +11,12 @@ use crate::{Stats, START_TIME};
 pub enum Strategies {
     General,
     Pedantic,
+    GeneralMulti
 }
 
 pub trait Strategy<T>
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
 }
@@ -72,11 +73,9 @@ pub(crate) fn check_if_exceeded_iterations(stats: &Stats) -> ProcessStatus {
 pub(crate) fn check_if_stopping_minimization<T>(
     stats: &Stats,
     settings: &Settings,
-    mm: &dyn DataTraits<T>,
+    mm: &[T],
     check_length: bool,
 ) -> ProcessStatus
-where
-    T: Clone,
 {
     if check_if_exceeded_time(settings) == ProcessStatus::Stop {
         return ProcessStatus::Stop;
@@ -101,10 +100,10 @@ pub(crate) fn execute_rules_until_first_found_broken<T>(
     check_length: bool,
 ) -> ProcessStatus
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
     for rule in rules {
-        if check_if_stopping_minimization(stats, settings, mm, check_length) == ProcessStatus::Stop {
+        if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
             return ProcessStatus::Stop;
         }
         if execute_rule_and_extend_results(rule, stats, settings, mm) {
@@ -122,15 +121,19 @@ pub(crate) fn execute_rule_and_extend_results<T>(
     mm: &mut dyn DataTraits<T>,
 ) -> bool
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile
 {
     let old_len = mm.len();
-    let is_broken = rule.execute(stats, mm, settings);
+    let new_mm = rule.execute(stats, mm.get_vec(), mm.get_mode(), settings);
+    let is_broken = new_mm.is_some();
+    if let Some(new_mm) = new_mm {
+        *mm.get_mut_vec() = new_mm;
+    }
     extend_results(is_broken, 1, old_len, mm.len(), stats, mm.get_mode(), settings);
 
     // Also saves current minimal output to file, to be able to get results even if app will be stopped by user in the middle of minimization
     if is_broken {
-        if let Err(e) = mm.save_to_file(&settings.output_file) {
+        if let Err(e) = T::save_slice_to_file(mm.get_vec(), &settings.output_file) {
             eprintln!("Error writing file {}, reason {}", &settings.output_file, e);
             process::exit(1);
         }

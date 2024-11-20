@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use rand::prelude::ThreadRng;
 
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
-use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode};
+use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode, SaveSliceToFile};
 use crate::settings::{Settings, EXTENSION};
 use crate::strategy::common::{Strategies, Strategy};
 use crate::strategy::general::GeneralStrategy;
@@ -80,7 +80,7 @@ fn main() {
         bytes: initial_file_content.clone(),
         mode: Mode::Bytes,
     };
-    let (is_initially_broken, initial_output) = check_if_is_broken(&mb, &settings);
+    let (is_initially_broken, initial_output) = check_if_is_broken(mb.get_vec(), &settings);
 
     if !is_initially_broken {
         eprintln!("File is not broken, check command or file");
@@ -106,7 +106,7 @@ fn main() {
 
     let mb = minimize_content(initial_file_content.clone(), &mut stats, &settings, &mut rng);
 
-    if !check_if_is_broken(&mb, &settings).0 && settings.is_normal_message_visible() {
+    if !check_if_is_broken(mb.get_vec(), &settings).0 && settings.is_normal_message_visible() {
         eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
         eprintln!("==================COMMAND=================");
         eprintln!("{}", create_command(&settings));
@@ -127,7 +127,7 @@ fn main() {
     }
 
     let bytes = mb.len();
-    match mb.save_to_file(&settings.output_file) {
+    match SaveSliceToFile::save_slice_to_file(&mb.bytes, &settings.output_file) {
         Ok(_) => {
             if settings.is_normal_message_visible() {
                 if bytes == initial_file_content.len() {
@@ -194,9 +194,10 @@ fn minimize_content(
     mb
 }
 
-pub fn get_strategy<T: Clone + 'static>(settings: &Settings) -> Box<dyn Strategy<T>> {
+pub fn get_strategy<T: Clone + 'static + SaveSliceToFile>(settings: &Settings) -> Box<dyn Strategy<T>> {
     match settings.strategy {
         Strategies::General => Box::new(GeneralStrategy::<T>::new()),
         Strategies::Pedantic => Box::new(PedanticStrategy::<T>::new()),
+        Strategies::GeneralMulti => Box::new(GeneralStrategy::<T>::new()),
     }
 }
