@@ -1,10 +1,10 @@
 use std::{fs, io};
-use std::io::Write;
+
 use strum_macros::Display;
 
 pub trait DataTraits<T: Clone> {
-    fn get_mut_vec(&mut self) -> &mut Vec<T>;
     fn get_vec(&self) -> &Vec<T>;
+    fn replace_vec(&mut self, new_vec: Vec<T>);
     fn len(&self) -> usize {
         self.get_vec().len()
     }
@@ -15,11 +15,11 @@ pub struct MinimizationBytes {
     pub(crate) bytes: Vec<u8>,
 }
 impl DataTraits<u8> for MinimizationBytes {
-    fn get_mut_vec(&mut self) -> &mut Vec<u8> {
-        &mut self.bytes
-    }
     fn get_vec(&self) -> &Vec<u8> {
         &self.bytes
+    }
+    fn replace_vec(&mut self, new_vec: Vec<u8>) {
+        self.bytes = new_vec;
     }
     fn get_mode(&self) -> Mode {
         self.mode
@@ -30,11 +30,11 @@ pub struct MinimizationLines {
     pub(crate) lines: Vec<String>,
 }
 impl DataTraits<String> for MinimizationLines {
-    fn get_mut_vec(&mut self) -> &mut Vec<String> {
-        &mut self.lines
-    }
     fn get_vec(&self) -> &Vec<String> {
         &self.lines
+    }
+    fn replace_vec(&mut self, new_vec: Vec<String>) {
+        self.lines = new_vec;
     }
     fn get_mode(&self) -> Mode {
         self.mode
@@ -45,11 +45,11 @@ pub struct MinimizationChars {
     pub(crate) chars: Vec<char>,
 }
 impl DataTraits<char> for MinimizationChars {
-    fn get_mut_vec(&mut self) -> &mut Vec<char> {
-        &mut self.chars
-    }
     fn get_vec(&self) -> &Vec<char> {
         &self.chars
+    }
+    fn replace_vec(&mut self, new_vec: Vec<char>) {
+        self.chars = new_vec;
     }
     fn get_mode(&self) -> Mode {
         self.mode
@@ -57,7 +57,9 @@ impl DataTraits<char> for MinimizationChars {
 }
 
 pub trait SaveSliceToFile {
-    fn save_slice_to_file(slice: &[Self], file_name: &str) -> io::Result<()> where Self: Sized;
+    fn save_slice_to_file(slice: &[Self], file_name: &str) -> io::Result<()>
+    where
+        Self: Sized;
 }
 
 impl SaveSliceToFile for u8 {
@@ -68,7 +70,7 @@ impl SaveSliceToFile for u8 {
 
 impl SaveSliceToFile for char {
     fn save_slice_to_file(slice: &[char], file_name: &str) -> io::Result<()> {
-        fs::write(file_name, &slice.iter().collect::<String>())
+        fs::write(file_name, slice.iter().collect::<String>())
     }
 }
 

@@ -11,6 +11,7 @@ use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, Minimi
 use crate::settings::{Settings, EXTENSION};
 use crate::strategy::common::{Strategies, Strategy};
 use crate::strategy::general::GeneralStrategy;
+use crate::strategy::general_multi::GeneralMultiStrategy;
 use crate::strategy::pedantic::PedanticStrategy;
 
 mod common;
@@ -127,7 +128,7 @@ fn main() {
     }
 
     let bytes = mb.len();
-    match SaveSliceToFile::save_slice_to_file(&mb.bytes, &settings.output_file) {
+    match SaveSliceToFile::save_slice_to_file(mb.get_vec(), &settings.output_file) {
         Ok(_) => {
             if settings.is_normal_message_visible() {
                 if bytes == initial_file_content.len() {
@@ -194,10 +195,10 @@ fn minimize_content(
     mb
 }
 
-pub fn get_strategy<T: Clone + 'static + SaveSliceToFile>(settings: &Settings) -> Box<dyn Strategy<T>> {
+pub fn get_strategy<T: Clone + 'static + SaveSliceToFile + Send + Sync>(settings: &Settings) -> Box<dyn Strategy<T>> {
     match settings.strategy {
         Strategies::General => Box::new(GeneralStrategy::<T>::new()),
         Strategies::Pedantic => Box::new(PedanticStrategy::<T>::new()),
-        Strategies::GeneralMulti => Box::new(GeneralStrategy::<T>::new()),
+        Strategies::GeneralMulti => Box::new(GeneralMultiStrategy::<T>::new()),
     }
 }

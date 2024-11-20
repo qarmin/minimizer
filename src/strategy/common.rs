@@ -11,12 +11,12 @@ use crate::{Stats, START_TIME};
 pub enum Strategies {
     General,
     Pedantic,
-    GeneralMulti
+    GeneralMulti,
 }
 
 pub trait Strategy<T>
 where
-    T: Clone + SaveSliceToFile
+    T: Clone + SaveSliceToFile + Send + Sync,
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng);
 }
@@ -75,8 +75,7 @@ pub(crate) fn check_if_stopping_minimization<T>(
     settings: &Settings,
     mm: &[T],
     check_length: bool,
-) -> ProcessStatus
-{
+) -> ProcessStatus {
     if check_if_exceeded_time(settings) == ProcessStatus::Stop {
         return ProcessStatus::Stop;
     }
@@ -100,7 +99,7 @@ pub(crate) fn execute_rules_until_first_found_broken<T>(
     check_length: bool,
 ) -> ProcessStatus
 where
-    T: Clone + SaveSliceToFile
+    T: Clone + SaveSliceToFile + Send + Sync,
 {
     for rule in rules {
         if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
@@ -121,13 +120,13 @@ pub(crate) fn execute_rule_and_extend_results<T>(
     mm: &mut dyn DataTraits<T>,
 ) -> bool
 where
-    T: Clone + SaveSliceToFile
+    T: Clone + SaveSliceToFile + Send + Sync,
 {
     let old_len = mm.len();
     let new_mm = rule.execute(stats, mm.get_vec(), mm.get_mode(), settings);
     let is_broken = new_mm.is_some();
     if let Some(new_mm) = new_mm {
-        *mm.get_mut_vec() = new_mm;
+        mm.replace_vec(new_mm);
     }
     extend_results(is_broken, 1, old_len, mm.len(), stats, mm.get_mode(), settings);
 

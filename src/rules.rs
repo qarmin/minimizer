@@ -5,7 +5,7 @@ use rand::{thread_rng, Rng};
 use strum_macros::EnumIter;
 
 use crate::common::check_if_is_broken;
-use crate::data_trait::{DataTraits, Mode, SaveSliceToFile};
+use crate::data_trait::{Mode, SaveSliceToFile};
 use crate::settings::Settings;
 use crate::Stats;
 
@@ -155,9 +155,9 @@ impl Rule {
     }
     pub fn execute<T>(&self, stats: &Stats, content: &[T], mode: Mode, settings: &Settings) -> Option<Vec<T>>
     where
-        T: Clone + SaveSliceToFile
+        T: Clone + SaveSliceToFile + Send + Sync,
     {
-        assert!(content.len() >= 1);
+        assert!(!content.is_empty());
         if settings.is_extra_verbose_message_visible() {
             println!(
                 "Executing rule: {} ({} iteration), with size: {} {}, ",
@@ -186,7 +186,7 @@ impl Rule {
             }
         }
 
-        let (is_broken, _output) = check_if_is_broken(content, settings);
+        let (is_broken, _output) = check_if_is_broken(&test_content, settings);
 
         if is_broken {
             Some(test_content)

@@ -27,7 +27,7 @@ impl<T> PedanticStrategy<T> {
 }
 impl<T> Strategy<T> for PedanticStrategy<T>
 where
-    T: Clone + SaveSliceToFile
+    T: Clone + SaveSliceToFile + Send + Sync,
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng) {
         minimize_internal(stats, settings, mm, rng);
@@ -43,7 +43,7 @@ where
 
 fn minimize_internal<T>(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, _rng: &mut ThreadRng)
 where
-    T: Clone + SaveSliceToFile
+    T: Clone + SaveSliceToFile + Send + Sync,
 {
     const REMOVE_FROM_START_ITERS: usize = 5;
     const REMOVE_FROM_END_ITERS: usize = 20;
@@ -81,7 +81,7 @@ where
     }
 }
 
-pub fn minimize_smaller_than<T: Clone + SaveSliceToFile>(
+pub fn minimize_smaller_than<T: Clone + SaveSliceToFile + Send + Sync>(
     stats: &mut Stats,
     settings: &Settings,
     mm: &mut dyn DataTraits<T>,
