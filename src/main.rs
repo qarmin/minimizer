@@ -57,12 +57,12 @@ fn main() {
     let extension_with_dot = if extension.is_empty() {
         extension.to_string()
     } else {
-        format!(".{}", extension)
+        format!(".{extension}")
     };
     EXTENSION
         .set(extension_with_dot)
         .expect("Extension set twice, which should not happen");
-    settings.command = settings.command.replace("\"", "'");
+    settings.command = settings.command.replace('"', "'");
 
     let start_time = Instant::now();
     let initial_file_content = load_and_check_files(&settings);
@@ -118,7 +118,7 @@ fn main() {
         let initial_str_content = String::from_utf8(initial_file_content.clone());
         if let Ok(initial_str_content) = initial_str_content {
             if initial_str_content.len() < 4096 {
-                eprintln!("{}", initial_str_content);
+                eprintln!("{initial_str_content}");
             } else {
                 eprintln!("Content is too long to display");
             }
@@ -130,7 +130,7 @@ fn main() {
 
     let bytes = mb.len();
     match SaveSliceToFile::save_slice_to_file(mb.get_vec(), &settings.output_file) {
-        Ok(_) => {
+        Ok(()) => {
             if settings.is_normal_message_visible() {
                 if bytes == initial_file_content.len() {
                     println!(
@@ -167,7 +167,10 @@ fn minimize_content(
     if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
         let mut ms = MinimizationLines {
             mode: Mode::Lines,
-            lines: initial_str_content.split("\n").map(|x| x.to_string()).collect(),
+            lines: initial_str_content
+                .split('\n')
+                .map(std::string::ToString::to_string)
+                .collect(),
         };
         stats.max_attempts = settings.attempts / 3;
         get_strategy(settings).minimize(stats, settings, &mut ms, rng);
@@ -186,7 +189,7 @@ fn minimize_content(
     } else {
         mb = MinimizationBytes {
             mode: Mode::Bytes,
-            bytes: initial_file_content.clone(),
+            bytes: initial_file_content,
         };
     }
 

@@ -21,7 +21,7 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
     if settings.disable_file_name_escaping {
         input_command.replace(&settings.file_symbol, file_name)
     } else {
-        input_command.replace(&settings.file_symbol, &format!("\"{}\"", file_name))
+        input_command.replace(&settings.file_symbol, &format!("\"{file_name}\""))
     }
 }
 
@@ -59,8 +59,7 @@ where
 
     if settings.print_command_output && settings.is_normal_message_visible() {
         println!(
-            "=========================\n{}\nMinimization result - contains broken info \"{}\", contains ignored info \"{}\", is broken \"{}\", took {elapsed:?}\n=========================",
-            all, contains_broken_info, contains_ignored_info, is_broken
+            "=========================\n{all}\nMinimization result - contains broken info \"{contains_broken_info}\", contains ignored info \"{contains_ignored_info}\", is broken \"{is_broken}\", took {elapsed:?}\n========================="
         );
     }
 

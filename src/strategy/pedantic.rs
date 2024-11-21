@@ -78,7 +78,7 @@ where
             if check_if_stopping_minimization(stats, settings, mm.get_vec(), true) == ProcessStatus::Stop {
                 return;
             }
-            let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
+            let _ = execute_rule_and_extend_results(&get_random_rule(mm.len()), stats, settings, mm);
         }
     }
 }
@@ -94,7 +94,7 @@ pub fn minimize_smaller_than<T: Clone + SaveSliceToFile + Send + Sync + Debug>(
         }
 
         let rule = Rule::crete_remove_exact_idx_rule(vec![id]);
-        let _ = execute_rule_and_extend_results(rule, stats, settings, mm);
+        let _ = execute_rule_and_extend_results(&rule, stats, settings, mm);
     }
     ProcessStatus::Continue
 }

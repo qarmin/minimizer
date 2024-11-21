@@ -106,7 +106,7 @@ where
         if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
             return ProcessStatus::Stop;
         }
-        if execute_rule_and_extend_results(rule, stats, settings, mm) {
+        if execute_rule_and_extend_results(&rule, stats, settings, mm) {
             return ProcessStatus::Continue;
         }
     }
@@ -115,7 +115,7 @@ where
 
 #[must_use]
 pub(crate) fn execute_rule_and_extend_results<T>(
-    rule: Rule,
+    rule: &Rule,
     stats: &mut Stats,
     settings: &Settings,
     mm: &mut dyn DataTraits<T>,

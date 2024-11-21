@@ -44,9 +44,9 @@ impl Display for Rule {
             Rule::RemoveContinuous {
                 start_idx_included,
                 end_idx_excluded,
-            } => write!(f, "RemoveContinuous: {}..{}", start_idx_included, end_idx_excluded),
+            } => write!(f, "RemoveContinuous: {start_idx_included}..{end_idx_excluded}"),
             Rule::RemoveRandom { indexes_to_remove } => {
-                write!(f, "RemoveRandom: {:?}", indexes_to_remove)
+                write!(f, "RemoveRandom: {indexes_to_remove:?}")
             }
         }
     }

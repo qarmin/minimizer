@@ -68,7 +68,7 @@ where
             return;
         }
 
-        let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
+        let _ = execute_rule_and_extend_results(&get_random_rule(mm.len()), stats, settings, mm);
     }
 }
 

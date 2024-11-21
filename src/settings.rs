@@ -10,7 +10,7 @@ thread_local! {
 }
 
 pub fn get_temp_file() -> String {
-    TEMP_FILE.with(|f| f.clone())
+    TEMP_FILE.with(std::clone::Clone::clone)
 }
 
 #[derive(Parser)]
@@ -149,7 +149,7 @@ fn parse_strategy(input: &str) -> Result<Strategies, String> {
         "general" => Ok(Strategies::General),
         "pedantic" => Ok(Strategies::Pedantic),
         "general_multi" => Ok(Strategies::GeneralMulti),
-        missing => Err(format!("Unknown strategy: {}", missing)),
+        missing => Err(format!("Unknown strategy: {missing}")),
     }
 }
 
