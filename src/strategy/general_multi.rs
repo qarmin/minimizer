@@ -1,16 +1,20 @@
 use std::fmt::Debug;
+use std::num::NonZeroUsize;
+use std::sync::atomic::AtomicBool;
+use std::thread::available_parallelism;
+
+use once_cell::sync::Lazy;
+use rand::prelude::ThreadRng;
+use rayon::prelude::*;
+
 use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
-use crate::strategy::common::{check_if_stopping_minimization, execute_rule_and_extend_results, extend_results, ProcessStatus, Strategy};
+use crate::strategy::common::{check_if_stopping_minimization, extend_results, ProcessStatus, Strategy};
 use crate::Stats;
-use rand::prelude::ThreadRng;
-use rayon::prelude::*;
-use std::sync::atomic::{AtomicBool};
 
-// pub static NUMBER_OF_THREADS: Lazy<usize> = Lazy::new(|| {
-//     usize::from(available_parallelism().unwrap_or(NonZeroUsize::new(1).expect("Cannot fail")))
-// });
+pub static NUMBER_OF_THREADS: Lazy<usize> =
+    Lazy::new(|| usize::from(available_parallelism().unwrap_or(NonZeroUsize::new(1).expect("Cannot fail"))));
 
 // Simple strategy that should work for most cases
 // How this works:
@@ -29,7 +33,7 @@ impl<T> GeneralMultiStrategy<T> {
 }
 impl<T> Strategy<T> for GeneralMultiStrategy<T>
 where
-    T: Clone + SaveSliceToFile + Send + Sync + Debug
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     fn minimize(&self, stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, rng: &mut ThreadRng) {
         minimize_internal(stats, settings, mm, rng);
@@ -38,12 +42,12 @@ where
 
         if mm.len() <= 4 && mm.len() >= 2 {
             let all_combination_rules = Rule::create_all_combinations_rule(mm.len());
-            let _ = execute_multi_rules_until_first_found_broken(all_combination_rules, stats, settings, mm, false);
+            let _ = execute_multi_rules(all_combination_rules, stats, settings, mm, false);
         }
     }
 }
 
-pub(crate) fn execute_multi_rules_until_first_found_broken<T>(
+pub(crate) fn execute_multi_rules<T>(
     rules: Vec<Rule>,
     stats: &mut Stats,
     settings: &Settings,
@@ -51,7 +55,7 @@ pub(crate) fn execute_multi_rules_until_first_found_broken<T>(
     check_length: bool,
 ) -> ProcessStatus
 where
-    T: Clone + SaveSliceToFile + Send + Sync + Debug
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
         return ProcessStatus::Stop;
@@ -63,16 +67,20 @@ where
     let old_len = mm.len();
     let mode = mm.get_mode();
 
-    let results = rules.into_par_iter().take(available_stats as usize).map(|rule|
-        {
-            if check_if_stopping_minimization(stats, settings, &test_vec, check_length) == ProcessStatus::Stop {
+    let results = rules
+        .into_par_iter()
+        .take(available_stats as usize)
+        .map(|rule| {
+            if check_if_stopping_minimization(stats, settings, test_vec, check_length) == ProcessStatus::Stop {
                 stopped.store(true, std::sync::atomic::Ordering::Relaxed);
                 return None;
             }
-            let new_data = rule.execute(stats, &test_vec, mode, settings);
+            let new_data = rule.execute(stats, test_vec, mode, settings);
 
             Some(new_data)
-        }).while_some().collect::<Vec<_>>();
+        })
+        .while_some()
+        .collect::<Vec<_>>();
 
     let tested_items = results.len() as u32;
     let filtered_results = results.into_iter().flatten().collect::<Vec<_>>();
@@ -81,7 +89,15 @@ where
     if let Some(smallest_content) = smallest_content {
         mm.replace_vec(smallest_content.clone());
     }
-    extend_results(smallest_content.is_some(), tested_items, old_len, mm.len(), stats, mm.get_mode(), settings);
+    extend_results(
+        smallest_content.is_some(),
+        tested_items,
+        old_len,
+        mm.len(),
+        stats,
+        mm.get_mode(),
+        settings,
+    );
 
     if stopped.load(std::sync::atomic::Ordering::Relaxed) {
         return ProcessStatus::Stop;
@@ -89,10 +105,9 @@ where
     ProcessStatus::Continue
 }
 
-
 fn minimize_internal<T>(stats: &mut Stats, settings: &Settings, mm: &mut dyn DataTraits<T>, _rng: &mut ThreadRng)
 where
-    T: Clone + SaveSliceToFile + Send + Sync + Debug
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
     const REMOVE_FROM_START_ITERS: usize = 5;
     const REMOVE_FROM_END_ITERS: usize = 35;
@@ -104,9 +119,7 @@ where
 
         let from_start_end_rules = Rule::create_start_end_rule(mm.len(), iters, from_start);
 
-        if execute_multi_rules_until_first_found_broken(from_start_end_rules, stats, settings, mm, true)
-            == ProcessStatus::Stop
-        {
+        if execute_multi_rules(from_start_end_rules, stats, settings, mm, true) == ProcessStatus::Stop {
             return;
         };
     }
@@ -116,7 +129,14 @@ where
             return;
         }
 
-        let _ = execute_rule_and_extend_results(get_random_rule(mm.len()), stats, settings, mm);
+        let available_stats = stats.available();
+        let to_use = available_stats.min((2 * *NUMBER_OF_THREADS) as u32);
+
+        let rules = (0..to_use).map(|_| get_random_rule(mm.len())).collect::<Vec<_>>();
+
+        if execute_multi_rules(rules, stats, settings, mm, true) == ProcessStatus::Stop {
+            return;
+        };
     }
 }
 

@@ -6,7 +6,7 @@ use strum_macros::EnumIter;
 
 use crate::common::check_if_is_broken;
 use crate::data_trait::{Mode, SaveSliceToFile};
-use crate::settings::{get_temp_file, Settings};
+use crate::settings::Settings;
 use crate::Stats;
 
 #[allow(clippy::enum_variant_names)]

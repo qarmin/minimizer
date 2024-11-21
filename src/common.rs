@@ -1,8 +1,9 @@
+use std::fmt::Debug;
 use std::os::unix::prelude::ExitStatusExt;
 use std::path::Path;
 use std::process::{Output, Stdio};
 use std::{fs, process};
-use std::fmt::Debug;
+
 use crate::data_trait::SaveSliceToFile;
 use crate::settings::{get_temp_file, Settings};
 
