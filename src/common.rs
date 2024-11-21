@@ -1,9 +1,10 @@
+use std::fmt::Debug;
 use std::os::unix::prelude::ExitStatusExt;
 use std::path::Path;
 use std::process::{Output, Stdio};
 use std::{fs, process};
 
-use crate::data_trait::DataTraits;
+use crate::data_trait::SaveSliceToFile;
 use crate::settings::{get_temp_file, Settings};
 
 pub fn create_command(settings: &Settings) -> String {
@@ -20,15 +21,15 @@ fn create_single_command_str(settings: &Settings, file_name: &str, input_command
     if settings.disable_file_name_escaping {
         input_command.replace(&settings.file_symbol, file_name)
     } else {
-        input_command.replace(&settings.file_symbol, &format!("\"{}\"", file_name))
+        input_command.replace(&settings.file_symbol, &format!("\"{file_name}\""))
     }
 }
 
-pub fn check_if_is_broken<T>(content: &dyn DataTraits<T>, settings: &Settings) -> (bool, String)
+pub fn check_if_is_broken<T>(content: &[T], settings: &Settings) -> (bool, String)
 where
-    T: Clone,
+    T: Clone + SaveSliceToFile + Send + Sync + Debug,
 {
-    if let Err(e) = content.save_to_file(&get_temp_file()) {
+    if let Err(e) = T::save_slice_to_file(content, &get_temp_file()) {
         eprintln!("Error writing file {}, reason {}", &get_temp_file(), e);
         process::exit(1);
     }
@@ -58,8 +59,7 @@ where
 
     if settings.print_command_output && settings.is_normal_message_visible() {
         println!(
-            "=========================\n{}\nMinimization result - contains broken info \"{}\", contains ignored info \"{}\", is broken \"{}\", took {elapsed:?}\n=========================",
-            all, contains_broken_info, contains_ignored_info, is_broken
+            "=========================\n{all}\nMinimization result - contains broken info \"{contains_broken_info}\", contains ignored info \"{contains_ignored_info}\", is broken \"{is_broken}\", took {elapsed:?}\n========================="
         );
     }
 

@@ -6,11 +6,11 @@ use crate::strategy::common::Strategies;
 pub static EXTENSION: OnceCell<String> = OnceCell::new();
 
 thread_local! {
-    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}{}", std::process::id(), EXTENSION.get().expect("Extension not set, but should be set"));
+    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}_{:?}{}", std::process::id(), std::thread::current().id(), EXTENSION.get().expect("Extension not set, but should be set"));
 }
 
 pub fn get_temp_file() -> String {
-    TEMP_FILE.with(|f| f.clone())
+    TEMP_FILE.with(std::clone::Clone::clone)
 }
 
 #[derive(Parser)]
@@ -148,7 +148,8 @@ fn parse_strategy(input: &str) -> Result<Strategies, String> {
     match input.to_lowercase().as_str() {
         "general" => Ok(Strategies::General),
         "pedantic" => Ok(Strategies::Pedantic),
-        missing => Err(format!("Unknown strategy: {}", missing)),
+        "general_multi" => Ok(Strategies::GeneralMulti),
+        missing => Err(format!("Unknown strategy: {missing}")),
     }
 }
 

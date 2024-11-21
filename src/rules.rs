@@ -1,11 +1,11 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::{thread_rng, Rng};
 use strum_macros::EnumIter;
 
 use crate::common::check_if_is_broken;
-use crate::data_trait::DataTraits;
+use crate::data_trait::{Mode, SaveSliceToFile};
 use crate::settings::Settings;
 use crate::Stats;
 
@@ -44,9 +44,9 @@ impl Display for Rule {
             Rule::RemoveContinuous {
                 start_idx_included,
                 end_idx_excluded,
-            } => write!(f, "RemoveContinuous: {}..{}", start_idx_included, end_idx_excluded),
+            } => write!(f, "RemoveContinuous: {start_idx_included}..{end_idx_excluded}"),
             Rule::RemoveRandom { indexes_to_remove } => {
-                write!(f, "RemoveRandom: {:?}", indexes_to_remove)
+                write!(f, "RemoveRandom: {indexes_to_remove:?}")
             }
         }
     }
@@ -153,47 +153,46 @@ impl Rule {
             indexes_to_remove: idxs,
         }
     }
-    pub fn execute<T>(&self, stats: &Stats, content: &mut dyn DataTraits<T>, settings: &Settings) -> bool
+    pub fn execute<T>(&self, stats: &Stats, content: &[T], mode: Mode, settings: &Settings) -> Option<Vec<T>>
     where
-        T: Clone,
+        T: Clone + SaveSliceToFile + Send + Sync + Debug,
     {
-        assert!(content.len() >= 1);
+        assert!(!content.is_empty());
         if settings.is_extra_verbose_message_visible() {
             println!(
                 "Executing rule: {} ({} iteration), with size: {} {}, ",
                 self,
                 stats.all_iterations + 1,
                 content.len(),
-                content.get_mode()
+                mode
             );
         }
-        let initial_content = content.get_vec().clone();
+        let mut test_content = content.to_vec();
         match &self {
             Rule::RemoveContinuous {
                 start_idx_included,
                 end_idx_excluded,
             } => {
-                content.get_mut_vec().drain(start_idx_included..end_idx_excluded);
+                test_content.drain(start_idx_included..end_idx_excluded);
             }
             Rule::RemoveRandom { indexes_to_remove } => {
-                let new_vec = content
-                    .get_vec()
+                let new_vec = test_content
                     .iter()
                     .enumerate()
                     .filter(|(idx, _)| !indexes_to_remove.contains(idx))
                     .map(|(_, x)| x.clone())
                     .collect();
-                *content.get_mut_vec() = new_vec;
+                test_content = new_vec;
             }
         }
 
-        let (is_broken, _output) = check_if_is_broken(content, settings);
+        let (is_broken, _output) = check_if_is_broken(&test_content, settings);
 
-        if !is_broken {
-            *content.get_mut_vec() = initial_content;
+        if is_broken {
+            Some(test_content)
+        } else {
+            None
         }
-
-        is_broken
     }
 }
 

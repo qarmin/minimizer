@@ -9,7 +9,10 @@ env:
 jobs:
   minimizer:
     runs-on: ubuntu-22.04
-
+    strategy:
+      fail-fast: false
+      matrix:
+        strategy: [general, pedantic, general_multi]
     steps:
       - uses: actions/checkout@v4
 
@@ -34,22 +37,7 @@ jobs:
 
       - name: Minimize files
         run: |
-          cd test
-          RUST_BACKTRACE=1 minimizer -i input.txt -o output.txt -c "cat {}" -a 1000 -b "QWER" -r -v
-          cd ..
-
-      - name: Test result
-        run: |
-          # Check if output.txt is equal to expected.txt
-          cd test
-          printf "QWER" > expected.txt
-          diff output.txt expected.txt
-
-      - name: Minimize files pedantic
-        run: |
-          cd test
-          RUST_BACKTRACE=1 minimizer -i input.txt -o output.txt -c "cat {}" -a 1000 -b "QWER" -r -v -s pedantic
-          cd ..
+          RUST_BACKTRACE=1 minimizer -i test/input.txt -o test/output.txt -c "cat {}" -a 1000 -b "QWER" -r -v -s ${{ matrix.strategy }}
 
       - name: Test result
         run: |
@@ -61,5 +49,5 @@ jobs:
       - name: Minimize files, hit timeout
         run: |
           cd test
-          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --additional-command "sleep 5" --attempts 1000 --broken-info "QWER" -r -v --max-time 10
+          RUST_BACKTRACE=1 minimizer --input-file input.txt --output-file output.txt --command "cat {}" --additional-command "sleep 5" --attempts 1000 --broken-info "QWER" -r -v --max-time 10 -s ${{ matrix.strategy }}
           cd ..
