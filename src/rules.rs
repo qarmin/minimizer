@@ -6,7 +6,7 @@ use strum_macros::EnumIter;
 
 use crate::common::check_if_is_broken;
 use crate::data_trait::{Mode, SaveSliceToFile};
-use crate::settings::Settings;
+use crate::settings::{get_temp_file, Settings};
 use crate::Stats;
 
 #[allow(clippy::enum_variant_names)]
@@ -176,7 +176,7 @@ impl Rule {
                 test_content.drain(start_idx_included..end_idx_excluded);
             }
             Rule::RemoveRandom { indexes_to_remove } => {
-                let new_vec = content
+                let new_vec = test_content
                     .iter()
                     .enumerate()
                     .filter(|(idx, _)| !indexes_to_remove.contains(idx))

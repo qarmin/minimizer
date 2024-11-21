@@ -56,7 +56,6 @@ where
     if check_if_stopping_minimization(stats, settings, mm.get_vec(), check_length) == ProcessStatus::Stop {
         return ProcessStatus::Stop;
     }
-    dbg!(mm.len(), rules.len());
 
     let available_stats = stats.available();
     let stopped = AtomicBool::new(false);
@@ -75,16 +74,14 @@ where
             Some(new_data)
         }).while_some().collect::<Vec<_>>();
 
+    let tested_items = results.len() as u32;
+    let filtered_results = results.into_iter().flatten().collect::<Vec<_>>();
 
-    dbg!(&stopped.load(std::sync::atomic::Ordering::Relaxed));
-    dbg!(&results);
-    let smallest_content = results.iter().flatten().min_by_key(|x| x.len());
+    let smallest_content = filtered_results.iter().min_by_key(|x| x.len());
     if let Some(smallest_content) = smallest_content {
-        dbg!(smallest_content.len());
-        dbg!(smallest_content);
         mm.replace_vec(smallest_content.clone());
     }
-    extend_results(smallest_content.is_some(), results.len() as u32, old_len, mm.len(), stats, mm.get_mode(), settings);
+    extend_results(smallest_content.is_some(), tested_items, old_len, mm.len(), stats, mm.get_mode(), settings);
 
     if stopped.load(std::sync::atomic::Ordering::Relaxed) {
         return ProcessStatus::Stop;

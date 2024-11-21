@@ -6,7 +6,7 @@ use crate::strategy::common::Strategies;
 pub static EXTENSION: OnceCell<String> = OnceCell::new();
 
 thread_local! {
-    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}{}", std::process::id(), EXTENSION.get().expect("Extension not set, but should be set"));
+    pub static TEMP_FILE: String = format!("/tmp/minimizer_{}_{:?}{}", std::process::id(), std::thread::current().id(), EXTENSION.get().expect("Extension not set, but should be set"));
 }
 
 pub fn get_temp_file() -> String {
