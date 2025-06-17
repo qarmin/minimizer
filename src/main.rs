@@ -9,7 +9,7 @@ use rand::prelude::ThreadRng;
 
 use crate::common::{check_if_is_broken, create_command, load_and_check_files};
 use crate::data_trait::{DataTraits, MinimizationBytes, MinimizationChars, MinimizationLines, Mode, SaveSliceToFile};
-use crate::settings::{Settings, EXTENSION};
+use crate::settings::{EXTENSION, Settings};
 use crate::strategy::common::{Strategies, Strategy};
 use crate::strategy::general::GeneralStrategy;
 use crate::strategy::general_multi::GeneralMultiStrategy;
@@ -31,7 +31,7 @@ pub struct Stats {
 }
 impl Stats {
     pub fn new() -> Self {
-        Stats::default()
+        Self::default()
     }
     pub fn available(&self) -> u32 {
         self.max_attempts - self.current_iteration_count
@@ -99,7 +99,7 @@ fn main() {
         process::exit(1);
     }
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut stats = Stats {
         all_iterations: 0,
         current_iteration_count: 0,
@@ -109,7 +109,9 @@ fn main() {
     let mb = minimize_content(initial_file_content.clone(), &mut stats, &settings, &mut rng);
 
     if !check_if_is_broken(mb.get_vec(), &settings).0 && settings.is_normal_message_visible() {
-        eprintln!("Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output.");
+        eprintln!(
+            "Minimized file was broken at start, but now is not - this may be bug in minimizer or app have not stable output."
+        );
         eprintln!("==================COMMAND=================");
         eprintln!("{}", create_command(&settings));
         eprintln!("==================OUTPUT==================");
@@ -145,7 +147,14 @@ fn main() {
                     let initial_size_percent = (bytes as f64 / initial_file_content.len() as f64) * 100.0;
                     println!(
                         "File {} was minimized from {} to {} bytes({:.1}% of initial size), after {} iterations (limit was {}, retrying - {}) in {:?}",
-                        &settings.output_file, initial_file_content.len(), bytes, initial_size_percent, stats.all_iterations, settings.attempts, settings.reset_attempts, start_time.elapsed()
+                        &settings.output_file,
+                        initial_file_content.len(),
+                        bytes,
+                        initial_size_percent,
+                        stats.all_iterations,
+                        settings.attempts,
+                        settings.reset_attempts,
+                        start_time.elapsed()
                     );
                 }
             }
@@ -164,33 +173,37 @@ fn minimize_content(
     rng: &mut ThreadRng,
 ) -> MinimizationBytes {
     let mut mb;
-    if let Ok(initial_str_content) = String::from_utf8(initial_file_content.clone()) {
-        let mut ms = MinimizationLines {
-            mode: Mode::Lines,
-            lines: initial_str_content
-                .split('\n')
-                .map(std::string::ToString::to_string)
-                .collect(),
-        };
-        stats.max_attempts = settings.attempts / 3;
-        get_strategy(settings).minimize(stats, settings, &mut ms, rng);
 
-        let mut mc = MinimizationChars {
-            mode: Mode::Chars,
-            chars: ms.lines.join("\n").chars().collect(),
-        };
-        stats.max_attempts = settings.attempts * 2 / 3;
-        get_strategy(settings).minimize(stats, settings, &mut mc, rng);
+    match (
+        settings.bytes_only_mode,
+        String::from_utf8(initial_file_content.clone()),
+    ) {
+        (false, Ok(utf8_content)) => {
+            let mut ms = MinimizationLines {
+                mode: Mode::Lines,
+                lines: utf8_content.split('\n').map(std::string::ToString::to_string).collect(),
+            };
+            stats.max_attempts = settings.attempts / 3;
+            get_strategy(settings).minimize(stats, settings, &mut ms, rng);
 
-        mb = MinimizationBytes {
-            mode: Mode::Bytes,
-            bytes: mc.chars.iter().collect::<String>().as_bytes().to_vec(),
-        };
-    } else {
-        mb = MinimizationBytes {
-            mode: Mode::Bytes,
-            bytes: initial_file_content,
-        };
+            let mut mc = MinimizationChars {
+                mode: Mode::Chars,
+                chars: ms.lines.join("\n").chars().collect(),
+            };
+            stats.max_attempts = settings.attempts * 2 / 3;
+            get_strategy(settings).minimize(stats, settings, &mut mc, rng);
+
+            mb = MinimizationBytes {
+                mode: Mode::Bytes,
+                bytes: mc.chars.iter().collect::<String>().as_bytes().to_vec(),
+            };
+        }
+        (_, _) => {
+            mb = MinimizationBytes {
+                mode: Mode::Bytes,
+                bytes: initial_file_content,
+            };
+        }
     }
 
     stats.max_attempts = settings.attempts;

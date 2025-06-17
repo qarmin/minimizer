@@ -1,7 +1,7 @@
 [package]
 name = "minimizer"
-version = "2.0.3"
-edition = "2021"
+version = "2.0.4"
+edition = "2024"
 authors = ["Rafał Mikrut"]
 description = "Minimize files to find minimal test case"
 homepage = "https://github.com/qarmin/minimizer"
@@ -9,11 +9,10 @@ repository = "https://github.com/qarmin/minimizer"
 license = "MIT"
 
 [dependencies]
-rand = "0.8"
-walkdir = "2.5"
+rand = "0.9"
 clap = { version = "4.5", features = ["derive"] }
-strum = { version = "0.26", features = ["strum_macros"] }
-strum_macros = "0.26"
+strum = { version = "0.27", features = ["strum_macros"] }
+strum_macros = "0.27"
 once_cell = "1.20.2"
 rayon = "1.10.0"
 

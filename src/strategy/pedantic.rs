@@ -2,14 +2,14 @@ use std::fmt::Debug;
 
 use rand::prelude::ThreadRng;
 
+use crate::Stats;
 use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
 use crate::strategy::common::{
-    check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken,
-    ProcessStatus, Strategy,
+    ProcessStatus, Strategy, check_if_stopping_minimization, execute_rule_and_extend_results,
+    execute_rules_until_first_found_broken,
 };
-use crate::Stats;
 
 // Simple strategy that should work for most cases
 // How this works:
@@ -50,6 +50,9 @@ where
     const REMOVE_FROM_START_ITERS: usize = 5;
     const REMOVE_FROM_END_ITERS: usize = 20;
 
+    const MINIMIZE_SMALLER_THAN: usize = 100;
+    let mut minimized_smaller_than = false;
+
     for (iters, from_start) in [(REMOVE_FROM_START_ITERS, true), (REMOVE_FROM_END_ITERS, false)] {
         if check_if_stopping_minimization(stats, settings, mm.get_vec(), true) == ProcessStatus::Stop {
             return;
@@ -61,11 +64,8 @@ where
             == ProcessStatus::Stop
         {
             return;
-        };
+        }
     }
-
-    const MINIMIZE_SMALLER_THAN: usize = 100;
-    let mut minimized_smaller_than = false;
 
     loop {
         if !minimized_smaller_than

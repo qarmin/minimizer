@@ -63,19 +63,19 @@ pub trait SaveSliceToFile {
 }
 
 impl SaveSliceToFile for u8 {
-    fn save_slice_to_file(slice: &[u8], file_name: &str) -> io::Result<()> {
+    fn save_slice_to_file(slice: &[Self], file_name: &str) -> io::Result<()> {
         fs::write(file_name, slice)
     }
 }
 
 impl SaveSliceToFile for char {
-    fn save_slice_to_file(slice: &[char], file_name: &str) -> io::Result<()> {
+    fn save_slice_to_file(slice: &[Self], file_name: &str) -> io::Result<()> {
         fs::write(file_name, slice.iter().collect::<String>())
     }
 }
 
 impl SaveSliceToFile for String {
-    fn save_slice_to_file(slice: &[String], file_name: &str) -> io::Result<()> {
+    fn save_slice_to_file(slice: &[Self], file_name: &str) -> io::Result<()> {
         fs::write(file_name, slice.join("\n"))
     }
 }

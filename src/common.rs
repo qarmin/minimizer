@@ -5,7 +5,7 @@ use std::process::{Output, Stdio};
 use std::{fs, process};
 
 use crate::data_trait::SaveSliceToFile;
-use crate::settings::{get_temp_file, Settings};
+use crate::settings::{Settings, get_temp_file};
 
 pub fn create_command(settings: &Settings) -> String {
     let base_command = create_single_command_str(settings, &get_temp_file(), &settings.command);
@@ -53,7 +53,7 @@ where
     let contains_ignored_info = settings
         .ignored_info
         .as_ref()
-        .map_or(false, |ignored| ignored.iter().any(|info| all.contains(info)));
+        .is_some_and(|ignored| ignored.iter().any(|info| all.contains(info)));
 
     let is_broken = contains_broken_info && !contains_ignored_info;
 
