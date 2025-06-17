@@ -142,6 +142,14 @@ pub struct Settings {
         help = "Strategy used to minimize files(General or Pedantic)",
     )]
     pub strategy: Strategies,
+
+    #[clap(
+        short,
+        long,
+        default_value_t = false,
+        help = "Use only bytes mode, even with utf8 files"
+    )]
+    pub only_bytes_mode: bool,
 }
 
 fn parse_strategy(input: &str) -> Result<Strategies, String> {

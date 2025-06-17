@@ -7,11 +7,11 @@ use once_cell::sync::Lazy;
 use rand::prelude::ThreadRng;
 use rayon::prelude::*;
 
+use crate::Stats;
 use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
-use crate::strategy::common::{check_if_stopping_minimization, extend_results, ProcessStatus, Strategy};
-use crate::Stats;
+use crate::strategy::common::{ProcessStatus, Strategy, check_if_stopping_minimization, extend_results};
 
 pub static NUMBER_OF_THREADS: Lazy<usize> =
     Lazy::new(|| usize::from(available_parallelism().unwrap_or(NonZeroUsize::new(1).expect("Cannot fail"))));
@@ -121,7 +121,7 @@ where
 
         if execute_multi_rules(from_start_end_rules, stats, settings, mm, true) == ProcessStatus::Stop {
             return;
-        };
+        }
     }
 
     loop {
@@ -136,7 +136,7 @@ where
 
         if execute_multi_rules(rules, stats, settings, mm, true) == ProcessStatus::Stop {
             return;
-        };
+        }
     }
 }
 

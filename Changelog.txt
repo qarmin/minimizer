@@ -1,3 +1,6 @@
+2.0.4 - 17.06.2025
+- Adds flag, to use always binary mode, even if file is valid UTF-8
+
 2.0.3 - 13.11.2024
 - Fix invalid name, when path not contains any dot(e.g. from libfuzzer)
 

@@ -6,7 +6,7 @@ use rand::prelude::ThreadRng;
 use crate::data_trait::{DataTraits, Mode, SaveSliceToFile};
 use crate::rules::Rule;
 use crate::settings::Settings;
-use crate::{Stats, START_TIME};
+use crate::{START_TIME, Stats};
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Strategies {

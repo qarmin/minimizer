@@ -2,14 +2,14 @@ use std::fmt::Debug;
 
 use rand::prelude::ThreadRng;
 
+use crate::Stats;
 use crate::data_trait::{DataTraits, SaveSliceToFile};
 use crate::rules::{Rule, RuleType};
 use crate::settings::Settings;
 use crate::strategy::common::{
-    check_if_stopping_minimization, execute_rule_and_extend_results, execute_rules_until_first_found_broken,
-    ProcessStatus, Strategy,
+    ProcessStatus, Strategy, check_if_stopping_minimization, execute_rule_and_extend_results,
+    execute_rules_until_first_found_broken,
 };
-use crate::Stats;
 
 // Simple strategy that should work for most cases
 // How this works:
@@ -60,7 +60,7 @@ where
             == ProcessStatus::Stop
         {
             return;
-        };
+        }
     }
 
     loop {

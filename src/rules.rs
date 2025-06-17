@@ -1,13 +1,14 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use rand::distributions::{Distribution, WeightedIndex};
-use rand::{thread_rng, Rng};
+use rand::distr::Distribution;
+use rand::distr::weighted::WeightedIndex;
+use rand::{Rng, rng};
 use strum_macros::EnumIter;
 
+use crate::Stats;
 use crate::common::check_if_is_broken;
 use crate::data_trait::{Mode, SaveSliceToFile};
 use crate::settings::Settings;
-use crate::Stats;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(EnumIter, Copy, Clone, Debug)]
@@ -23,7 +24,7 @@ impl RuleType {
     pub fn get_random_type(weights: &[(RuleType, usize)]) -> RuleType {
         let dist = WeightedIndex::new(weights.iter().map(|(_, weight)| *weight)).expect("Not provided weights");
 
-        weights[dist.sample(&mut thread_rng())].0
+        weights[dist.sample(&mut rng())].0
     }
 }
 
@@ -63,7 +64,7 @@ impl Rule {
         } else {
             // When number of requested checks is smaller than content size, we will collect random ranges
             (0..number_of_checks)
-                .map(|_| thread_rng().gen_range(1..content_size))
+                .map(|_| rng().random_range(1..content_size))
                 .collect::<Vec<_>>()
         };
         chosen_indexes.sort_unstable();
@@ -91,8 +92,8 @@ impl Rule {
 
     pub fn create_continuous_rule(content_size: usize) -> Rule {
         assert!(content_size >= 5);
-        let start_idx = thread_rng().gen_range(1..content_size - 2);
-        let end_idx = thread_rng().gen_range(start_idx + 1..content_size - 1);
+        let start_idx = rng().random_range(1..content_size - 2);
+        let end_idx = rng().random_range(start_idx + 1..content_size - 1);
         Rule::RemoveContinuous {
             start_idx_included: start_idx,
             end_idx_excluded: end_idx,
@@ -107,9 +108,9 @@ impl Rule {
         let max_number_of_indexes =
             number_of_indexes.unwrap_or_else(|| ((content_size as f32).sqrt() as usize).clamp(3, 100));
 
-        let number_of_indexes = thread_rng().gen_range(2..max_number_of_indexes);
+        let number_of_indexes = rng().random_range(2..max_number_of_indexes);
         let indexes_list = (1..(number_of_indexes.min(content_size - 1)))
-            .map(|_| thread_rng().gen_range(0..content_size))
+            .map(|_| rng().random_range(0..content_size))
             .collect();
         Rule::RemoveRandom {
             indexes_to_remove: indexes_list,
@@ -188,11 +189,7 @@ impl Rule {
 
         let (is_broken, _output) = check_if_is_broken(&test_content, settings);
 
-        if is_broken {
-            Some(test_content)
-        } else {
-            None
-        }
+        if is_broken { Some(test_content) } else { None }
     }
 }
 
