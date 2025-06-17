@@ -31,7 +31,7 @@ pub struct Stats {
 }
 impl Stats {
     pub fn new() -> Self {
-        Stats::default()
+        Self::default()
     }
     pub fn available(&self) -> u32 {
         self.max_attempts - self.current_iteration_count
@@ -175,7 +175,7 @@ fn minimize_content(
     let mut mb;
 
     match (
-        settings.only_bytes_mode,
+        settings.bytes_only_mode,
         String::from_utf8(initial_file_content.clone()),
     ) {
         (false, Ok(utf8_content)) => {

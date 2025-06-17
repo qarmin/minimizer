@@ -144,12 +144,12 @@ pub struct Settings {
     pub strategy: Strategies,
 
     #[clap(
-        short,
+        short = 'y',
         long,
         default_value_t = false,
         help = "Use only bytes mode, even with utf8 files"
     )]
-    pub only_bytes_mode: bool,
+    pub bytes_only_mode: bool,
 }
 
 fn parse_strategy(input: &str) -> Result<Strategies, String> {
